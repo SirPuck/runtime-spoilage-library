@@ -1,0 +1,1 @@
+require("exemple.lua")
