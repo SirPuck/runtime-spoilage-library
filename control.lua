@@ -1,3 +1,15 @@
+-- Helper functions, will be moved later
+-----------------------------------
+
+local function is_in_array(array, value)
+    for _, v in ipairs(array) do
+        if v == value then
+            return true
+        end
+    end
+    return false
+end
+
 
 
 -- Random selection functions
@@ -51,14 +63,24 @@ end
 -- Inventory swapping functions
 --------------------------------
 
-
-local function hotswap_in_character_inventory(event)
-    local inventory = event.source_entity.get_inventory(defines.inventory.character_main)
+--- @param outcomes string[] all the possible outcomes for all items that have spoiled
+local function hotswap_stack_in_character_inventory(entity, placeholder_items, outcomes)
+    local inventory = entity.get_inventory(defines.inventory.character_main)
+    
     for i = 1, #inventory do
         local stack = inventory[i]
-        if stack.valid_for_read and stack.name == "mutation-e" then
-            local result = math.random() < 0.5 and "iron-plate" or "copper-plate"
-            stack.set_stack({name = result, count = stack.count})
+        if stack.valid_for_read and is_in_array(placeholder_items, stack.name) then
+            local result = func()
+            stack.set_stack({ name = result, count = stack.count })
+        end
+    end
+end
+
+local function hotswap_item_in_character_inventory(entity)
+    local inventory = event.source_entity.get_inventory(defines.inventory.character_main)
+    for _, item_name in ipairs(items) do
+        if inventory.get_item_count(item_name) > 0 then
+            inventory.remove({ name = item_name, count = inventory.get_item_count(item_name) })
         end
     end
 end
