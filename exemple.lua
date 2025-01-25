@@ -49,7 +49,7 @@ local mutation_e = {
                 {
                     {
                         type = "script",
-                        effect_id = "mutation_spoil_effect",
+                        effect_id = "random_spoil_mutation-e",
                     },
 
                 }
@@ -80,7 +80,7 @@ local mutation_d = {
                 {
                     {
                         type = "script",
-                        effect_id = "mutation_spoil_effect",
+                        effect_id = "random_spoil_mutation-e",
                     },
 
                 }
@@ -98,9 +98,10 @@ data:extend{
     ingredients = {
         {type="item", name="iron-plate", amount = 1}
     },
+    icon = "__base__/graphics/icons/production-science-pack.png",
     enabled = true,
     results = {
-        {type = "item", name = "mutation-a", amount = 1}
+        {type = "item", name = "mutation-a", amount = 1},
     }
 }
 }

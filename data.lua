@@ -1,1 +1,1 @@
-require("exemple.lua")
+require("exemple")
