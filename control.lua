@@ -101,10 +101,10 @@ local function hotswap_item_in_character_inventory(entity, placeholder)
     if inventory then
         local _placeholder_number = inventory.get_item_count(placeholder)
         if _placeholder_number > 0 then
-            inventory.remove({name = placeholder})
+            inventory.remove({name=placeholder, count=_placeholder_number})
             inventory.insert({name = storage.spoilage_mapping[placeholder], count = _placeholder_number})
         end
-        if entity.cursor_stack and entity.cursor_stack.name == placeholder then
+        if entity.cursor_stack and entity.cursor_stack.valid_for_read and entity.cursor_stack.name == placeholder then
             entity.cursor_stack.set_stack({name=storage.spoilage_mapping[placeholder], count = entity.cursor_stack.count})
         end
     end
@@ -113,7 +113,7 @@ end
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param placeholder string the name of the placeholder item.
 --- @return nil
-local function hotswap_in_belt_inventory(entity, placeholder)
+local function hotswap_in_belt(entity, placeholder)
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
     for _, line in pairs(transport_lines) do
         if line.get_item_count(placeholder) == 0 then
@@ -129,6 +129,69 @@ local function hotswap_in_belt_inventory(entity, placeholder)
         ::continue::
     end
 end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param placeholder string the name of the placeholder item.
+--- @return nil
+local function hotswap_in_underground_belt(entity, placeholder)
+    local transport_lines = {
+        entity.get_transport_line(defines.transport_line.left_line),
+        entity.get_transport_line(defines.transport_line.left_underground_line),
+        entity.get_transport_line(defines.transport_line.secondary_left_line),
+        entity.get_transport_line(defines.transport_line.right_line),
+        entity.get_transport_line(defines.transport_line.right_underground_line),
+        entity.get_transport_line(defines.transport_line.secondary_right_line),
+    }
+    for _, line in pairs(transport_lines) do
+        if line.get_item_count(placeholder) == 0 then
+            goto continue
+        end
+        for i = 1, #line do
+            local stack = line[i]
+            if stack.valid_for_read and stack.name == placeholder then
+                roll_dice()
+                stack.set_stack({name = storage.spoilage_mapping[placeholder], count = stack.count})
+            end
+        end
+        ::continue::
+    end
+end
+
+local function _hotswap_in_splitter_lines(lines, placeholder)
+    for _, line in pairs(lines) do
+        for i = 1, #line do
+            local stack = line[i]
+            if stack.valid_for_read and stack.name == placeholder then
+                roll_dice()
+                stack.set_stack({name = storage.spoilage_mapping[placeholder], count = stack.count})
+            end
+        end
+    end
+end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param placeholder string the name of the placeholder item.
+--- @return nil
+local function hotswap_in_splitter(entity, placeholder)
+    local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
+    for _, line in pairs(transport_lines) do
+        if #line.input_lines == 0 then
+            goto continue
+        end
+        for i = 1, #line.input_lines do
+            _hotswap_in_splitter_lines(line.input_lines, placeholder)
+        end
+        ::continue::
+        if #line.output_lines == 0 then
+            goto next_iter
+        end
+        for i = 1, #line.output_lines do
+            _hotswap_in_splitter_lines(line.output_lines, placeholder)
+        end
+        ::next_iter::
+    end
+end
+
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param placeholder string containing all the items that have a random spoil result.
@@ -162,11 +225,11 @@ local function hotswap_in_machine(entity, placeholder)
     if enable_swap_in_assembler == false then
         return
     end
-local input = entity.get_inventory(defines.inventory.assembling_machine_input)
+    local input = entity.get_inventory(defines.inventory.assembling_machine_input)
     local output = entity.get_inventory(defines.inventory.assembling_machine_output)
     local dump = entity.get_inventory(defines.inventory.assembling_machine_dump)
-    --local trash = entity.get_inventory(defines.inventory.)
-    local inventories = {input, output, dump}
+--    local trash = entity.get_inventory(8)
+    local inventories = {input, output, dump, trash}
     for _, inventory in pairs(inventories) do
         local item_count = inventory.get_item_count(placeholder)
         if item_count > 0 then
@@ -191,11 +254,26 @@ local function hotswap_in_generic_inventory(entity, placeholder, inventory_defin
     if inventory then
         local current_count = inventory.get_item_count(placeholder)
         if current_count > 0 then
-            inventory.remove({name=placeholder})
+            inventory.remove({name=placeholder, count=current_count})
             inventory.insert({name=storage.spoilage_mapping[placeholder], count = current_count})
         end
     end
 end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param placeholder string the name of the placeholder item.
+--- @return nil
+local function hotswap_in_logistic_inventory(entity, placeholder)
+    local inventories = {entity.get_inventory(defines.inventory.chest), entity.get_inventory(defines.inventory.logistic_container_trash)}
+    for _, inventory in pairs(inventories) do
+        local current_count = inventory.get_item_count(placeholder)
+        if current_count > 0 then
+            inventory.remove({name=placeholder, count=current_count})
+            inventory.insert({name=storage.spoilage_mapping[placeholder], count = current_count})
+        end
+    end
+end
+
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param placeholder string the name of the placeholder item.
@@ -215,13 +293,42 @@ local function hotswap_in_generic_inventory_in_place(entity, placeholder, invent
     end
 end
 
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param placeholder string the name of the placeholder item.
+--- @return nil
+local function hotswap_on_ground(entity, placeholder)
+    return entity.stack.set_stack({name=storage.spoilage_mapping[placeholder], count=entity.stack.count})
+end
+
+--- @param event EventData.on_script_trigger_effect
+--- @param placeholder string the name of the placeholder item.
+local function hotswap_on_position(event, placeholder)
+    local surface = game.surfaces[event.surface_index]
+    local entity = surface.find_entities_filtered(
+        {
+            position = event.source_position,
+            name = "item-on-ground",
+            radius=2
+        }
+    )
+    if entity and entity[1] and entity[1].stack.name == placeholder then
+        entity[1].stack.set_stack({name=storage.spoilage_mapping[placeholder], count=entity[1].stack.count})
+    end
+
+end
 
 local generic_source_handler = {
     ["inserter"] = function(entity, placeholder_name) return hotswap_in_inserter_or_bot(entity, placeholder_name) end,
     ["logistic-robot"] = function(entity, placeholder_name) return hotswap_in_inserter_or_bot(entity, placeholder_name) end,
-    ["transport-belt"] = function(entity, placeholder_name) return hotswap_in_belt_inventory(entity, placeholder_name) end,
+    ["transport-belt"] = function(entity, placeholder_name) return hotswap_in_belt(entity, placeholder_name) end,
+    ["loader"] = function(entity, placeholder_name) return hotswap_in_belt(entity, placeholder_name) end,
+    ["underground-belt"] = function(entity, placeholder_name) return hotswap_in_underground_belt(entity, placeholder_name) end,
+    ["splitter"] = function(entity, placeholder_name) return hotswap_in_splitter(entity, placeholder_name) end,
     ["assembling-machine"] = function(entity, placeholder_name) return hotswap_in_machine(entity, placeholder_name) end,
     ["character"] = function(entity, placeholder_name) return hotswap_item_in_character_inventory(entity, placeholder_name) end,
+    ["logistic-container"] = function(entity, placeholder_name) return hotswap_in_logistic_inventory(entity, placeholder_name) end,
+    ["cargo-landing-pad"] = function(entity, placeholder_name) return hotswap_in_logistic_inventory(entity, placeholder_name) end,
+    ["item-entity"] = function(entity, placeholder_name) return hotswap_on_ground(entity, placeholder_name) end,
 }
 
 local defined_inventories = {
@@ -229,18 +336,21 @@ local defined_inventories = {
     ["cargo-wagon"] = defines.inventory.cargo_wagon,
     ["container"] = defines.inventory.chest,
     ["space-platform-hub"] = defines.inventory.hub_main,
-    ["rocket-silo"] = defines.inventory.rocket_silo_rocket
+    ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
 }
-
 script.on_event(defines.events.on_script_trigger_effect, function(event)
     local prefix_suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
-    if prefix_suffix[1] == PREFIX then
-        local swap_func = source_handler[event.source_entity.type]
-        if swap_func ~= nil then
-            swap_func(event.source_entity, prefix_suffix[2])
-        else
-            hotswap_in_generic_inventory(entity, placeholder, defined_inventories[event.source_entity.type])
+    if event.source_entity then
+        if prefix_suffix[1] == PREFIX then
+            local swap_func = generic_source_handler[event.source_entity.type]
+            if swap_func ~= nil then
+                swap_func(event.source_entity, prefix_suffix[2])
+            else
+                hotswap_in_generic_inventory(event.source_entity, prefix_suffix[2], defined_inventories[event.source_entity.type])
+            end
         end
+    else
+        hotswap_on_position(event, prefix_suffix[2])
     end
 end)
 
