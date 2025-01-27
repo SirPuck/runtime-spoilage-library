@@ -4,7 +4,7 @@ local mutation_a = {
     icon = "__base__/graphics/icons/automation-science-pack.png",
     subgroup = "raw-material",
     stack_size = 10,
-    spoil_ticks = 120,
+    spoil_ticks = 20,
     spoil_result = "mutation-d"
 }
 
@@ -14,7 +14,7 @@ local mutation_b = {
     icon = "__base__/graphics/icons/utility-science-pack.png",
     subgroup = "raw-material",
     stack_size = 10,
-    spoil_ticks = 120,
+    spoil_ticks = 6,
     spoil_result = "mutation-a"
 }
 
@@ -34,7 +34,7 @@ local mutation_e = {
     icon = "__base__/graphics/icons/chemical-science-pack.png",
     subgroup = "raw-material",
     stack_size = 10,
-    spoil_ticks = 60,
+    spoil_ticks = 10,
     spoil_result = "mutation-e",
     spoil_to_trigger_result = 
     {

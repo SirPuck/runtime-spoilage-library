@@ -1,5 +1,6 @@
 local registry = require("registry")
 local placeholder_to_possible_result_mapping = registry.placeholder_to_possible_result_mapping
+local placeholder_to_possible_result_mapping_v2 = registry.placeholder_to_possible_result_mapping_v2
 local enable_swap_in_assembler = false
 
 -- Helper functions, will be moved later
@@ -17,6 +18,19 @@ local function is_in_array(value, array)
     return false
 end
 
+
+local function select_result(placeholder)
+    local options = placeholder_to_possible_result_mapping[placeholder]
+    local mode = options
+    if mode.random then
+        if mode.weighted then
+            return "function_with_weights"
+        else
+            return "function_unweighted"
+        end
+    end
+
+end
 
 
 -- Random selection functions
@@ -122,7 +136,6 @@ local function hotswap_in_belt(entity, placeholder)
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder then
-                roll_dice()
                 stack.set_stack({name = storage.spoilage_mapping[placeholder], count = stack.count})
             end
         end
@@ -149,7 +162,6 @@ local function hotswap_in_underground_belt(entity, placeholder)
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder then
-                roll_dice()
                 stack.set_stack({name = storage.spoilage_mapping[placeholder], count = stack.count})
             end
         end
@@ -162,7 +174,6 @@ local function _hotswap_in_splitter_lines(lines, placeholder)
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder then
-                roll_dice()
                 stack.set_stack({name = storage.spoilage_mapping[placeholder], count = stack.count})
             end
         end
@@ -229,7 +240,7 @@ local function hotswap_in_machine(entity, placeholder)
     local output = entity.get_inventory(defines.inventory.assembling_machine_output)
     local dump = entity.get_inventory(defines.inventory.assembling_machine_dump)
 --    local trash = entity.get_inventory(8)
-    local inventories = {input, output, dump, trash}
+    local inventories = {input, output, dump}
     for _, inventory in pairs(inventories) do
         local item_count = inventory.get_item_count(placeholder)
         if item_count > 0 then
@@ -326,7 +337,7 @@ local generic_source_handler = {
     ["splitter"] = function(entity, placeholder_name) return hotswap_in_splitter(entity, placeholder_name) end,
     ["assembling-machine"] = function(entity, placeholder_name) return hotswap_in_machine(entity, placeholder_name) end,
     ["character"] = function(entity, placeholder_name) return hotswap_item_in_character_inventory(entity, placeholder_name) end,
-    ["logistic-container"] = function(entity, placeholder_name) return hotswap_in_logistic_inventory(entity, placeholder_name) end,
+    ["logistic-container"] = function(entity, placname) return hotswap_in_logistic_inventory(entity, placeholder_name) end,
     ["cargo-landing-pad"] = function(entity, placeholder_name) return hotswap_in_logistic_inventory(entity, placeholder_name) end,
     ["item-entity"] = function(entity, placeholder_name) return hotswap_on_ground(entity, placeholder_name) end,
 }
@@ -338,7 +349,10 @@ local defined_inventories = {
     ["space-platform-hub"] = defines.inventory.hub_main,
     ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
 }
-script.on_event(defines.events.on_script_trigger_effect, function(event)
+
+
+
+local function on_spoil(event)
     local prefix_suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
     if event.source_entity then
         if prefix_suffix[1] == PREFIX then
@@ -352,13 +366,18 @@ script.on_event(defines.events.on_script_trigger_effect, function(event)
     else
         hotswap_on_position(event, prefix_suffix[2])
     end
-end)
+end
+
+
 
 script.on_event(defines.events.on_tick, function(event)
     if event.tick % 20 == 0 then
         roll_dice()
     end
 end)
+
+script.on_event(defines.events.on_script_trigger_effect, on_spoil)
+
 
 script.on_init(function()
     storage.belt_mutator_counter = storage.belt_mutator_counter or 0
