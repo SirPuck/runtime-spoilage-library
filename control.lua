@@ -1,6 +1,6 @@
 local registry = require("registry")
 local placeholder_to_possible_result_mapping = registry.placeholder_to_possible_result_mapping
-local placeholder_to_possible_result_mapping_v2 = registry.placeholder_to_possible_result_mapping_v2
+local placeholder_to_result_conditional = registry.placeholder_to_result_conditional
 local enable_swap_in_assembler = false
 
 -- Helper functions, will be moved later
@@ -90,6 +90,23 @@ end
 
 -- Inventory swapping functions
 --------------------------------
+
+
+---comment
+---@param stack LuaItemStack
+---@param result string|nil
+local function set_or_nil_stack(stack, result)
+    if result ~= nil then
+        stack.set_stack({ name = result, count = stack.count })
+    else
+        stack.set_stack(nil)
+    end
+end
+
+
+
+
+
 -- Ex of spoil_mapping : {["placeholder"] = "result"}
 --- Single placeholder_item functions. These functions will only check if there is the placeholder_item triggering the event in the target inventory.
 --- target counterpart.
@@ -99,10 +116,11 @@ end
 --- @return nil
 local function hotswap_stack_in_character_inventory(entity, placeholder)
     local inventory = entity.get_inventory(defines.inventory.character_main)
+    local result = storage.spoilage_mapping[placeholder] or nil
     for i = 1, #inventory do
         local stack = inventory[i]
         if stack.valid_for_read and stack.name == placeholder then
-            stack.set_stack({ name = storage.spoilage_mapping[placeholder], count = stack.count })
+            set_or_nil_stack(stack, result)
         end
     end
 end
@@ -112,14 +130,17 @@ end
 --- @return nil
 local function hotswap_item_in_character_inventory(entity, placeholder)
     local inventory = entity.get_main_inventory(defines.inventory.character_main)
+    local result = storage.spoilage_mapping[placeholder] or nil
     if inventory then
         local _placeholder_number = inventory.get_item_count(placeholder)
         if _placeholder_number > 0 then
             inventory.remove({name=placeholder, count=_placeholder_number})
-            inventory.insert({name = storage.spoilage_mapping[placeholder], count = _placeholder_number})
+            if result ~= nil then
+                inventory.insert({name = storage.spoilage_mapping[placeholder], count = _placeholder_number})
+            end
         end
         if entity.cursor_stack and entity.cursor_stack.valid_for_read and entity.cursor_stack.name == placeholder then
-            entity.cursor_stack.set_stack({name=storage.spoilage_mapping[placeholder], count = entity.cursor_stack.count})
+            set_or_nil_stack(entity.cursor_stack, result, entity.cursor_stack.count)
         end
     end
 end
@@ -129,14 +150,15 @@ end
 --- @return nil
 local function hotswap_in_belt(entity, placeholder)
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
+    local result = storage.spoilage_mapping[placeholder]
     for _, line in pairs(transport_lines) do
         if line.get_item_count(placeholder) == 0 then
             goto continue
         end
-        for i = 1, #line do
+        for i = 1, line.line_length do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder then
-                stack.set_stack({name = storage.spoilage_mapping[placeholder], count = stack.count})
+                set_or_nil_stack(stack, result)
             end
         end
         ::continue::
@@ -155,6 +177,7 @@ local function hotswap_in_underground_belt(entity, placeholder)
         entity.get_transport_line(defines.transport_line.right_underground_line),
         entity.get_transport_line(defines.transport_line.secondary_right_line),
     }
+    local result = storage.spoilage_mapping[placeholder]
     for _, line in pairs(transport_lines) do
         if line.get_item_count(placeholder) == 0 then
             goto continue
@@ -162,19 +185,19 @@ local function hotswap_in_underground_belt(entity, placeholder)
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder then
-                stack.set_stack({name = storage.spoilage_mapping[placeholder], count = stack.count})
+                set_or_nil_stack(stack, result)
             end
         end
         ::continue::
     end
 end
 
-local function _hotswap_in_splitter_lines(lines, placeholder)
+local function _hotswap_in_splitter_lines(lines, placeholder, result)
     for _, line in pairs(lines) do
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder then
-                stack.set_stack({name = storage.spoilage_mapping[placeholder], count = stack.count})
+                set_or_nil_stack(stack, result)
             end
         end
     end
@@ -185,19 +208,20 @@ end
 --- @return nil
 local function hotswap_in_splitter(entity, placeholder)
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
+    local result = storage.spoilage_mapping[placeholder]
     for _, line in pairs(transport_lines) do
         if #line.input_lines == 0 then
             goto continue
         end
         for i = 1, #line.input_lines do
-            _hotswap_in_splitter_lines(line.input_lines, placeholder)
+            _hotswap_in_splitter_lines(line.input_lines, placeholder, result)
         end
         ::continue::
         if #line.output_lines == 0 then
             goto next_iter
         end
         for i = 1, #line.output_lines do
-            _hotswap_in_splitter_lines(line.output_lines, placeholder)
+            _hotswap_in_splitter_lines(line.output_lines, placeholder, result)
         end
         ::next_iter::
     end
@@ -211,21 +235,14 @@ local function hotswap_in_inserter_or_bot(entity, placeholder)
     local result = storage.spoilage_mapping[placeholder]
     --local result = math.random() < 0.5 and "iron-plate" or "copper-plate"
     if entity.held_stack.valid_for_read then
-        entity.held_stack.set_stack({name = result, count = entity.held_stack.count})
+        set_or_nil_stack(entity.held_stack, result)
     end
 end
 
 
-local PREFIX = "random_spoil_"
 
--- Function to validate prefix and extract suffix
-local function get_suffix_and_prefix_from_effect_id(effect_id)
-    if string.sub(effect_id, 1, #PREFIX) == PREFIX then
-        local suffix = string.sub(effect_id, #PREFIX + 1)
-        return {PREFIX, suffix} -- Return both the prefix and the suffix
-    end
-    return nil, nil -- Return nil values if the prefix doesn't match
-end
+
+
 
 
 -- /!\ ATTENTION /!\ Cannot write arbitrary items into the output nor dump stacks of the assembling machine.
@@ -262,11 +279,14 @@ end
 --- @return nil
 local function hotswap_in_generic_inventory(entity, placeholder, inventory_definition)
     local inventory = entity.get_inventory(inventory_definition)
+    local result = storage.spoilage_mapping[placeholder]
     if inventory then
         local current_count = inventory.get_item_count(placeholder)
         if current_count > 0 then
             inventory.remove({name=placeholder, count=current_count})
-            inventory.insert({name=storage.spoilage_mapping[placeholder], count = current_count})
+            if result ~= nil then
+                inventory.insert({name=storage.spoilage_mapping[placeholder], count = current_count})
+            end
         end
     end
 end
@@ -276,11 +296,14 @@ end
 --- @return nil
 local function hotswap_in_logistic_inventory(entity, placeholder)
     local inventories = {entity.get_inventory(defines.inventory.chest), entity.get_inventory(defines.inventory.logistic_container_trash)}
+    local result = storage.spoilage_mapping[placeholder]
     for _, inventory in pairs(inventories) do
         local current_count = inventory.get_item_count(placeholder)
         if current_count > 0 then
             inventory.remove({name=placeholder, count=current_count})
-            inventory.insert({name=storage.spoilage_mapping[placeholder], count = current_count})
+            if result ~= nil then
+                inventory.insert({name=storage.spoilage_mapping[placeholder], count = current_count})
+            end
         end
     end
 end
@@ -308,7 +331,7 @@ end
 --- @param placeholder string the name of the placeholder item.
 --- @return nil
 local function hotswap_on_ground(entity, placeholder)
-    return entity.stack.set_stack({name=storage.spoilage_mapping[placeholder], count=entity.stack.count})
+    return set_or_nil_stack(entity.stack, storage.spoilage_mapping[placeholder] or nil)
 end
 
 --- @param event EventData.on_script_trigger_effect
@@ -323,7 +346,7 @@ local function hotswap_on_position(event, placeholder)
         }
     )
     if entity and entity[1] and entity[1].stack.name == placeholder then
-        entity[1].stack.set_stack({name=storage.spoilage_mapping[placeholder], count=entity[1].stack.count})
+        set_or_nil_stack(entity[1].stack, storage.spoilage_mapping[placeholder] or nil)
     end
 
 end
@@ -337,7 +360,7 @@ local generic_source_handler = {
     ["splitter"] = function(entity, placeholder_name) return hotswap_in_splitter(entity, placeholder_name) end,
     ["assembling-machine"] = function(entity, placeholder_name) return hotswap_in_machine(entity, placeholder_name) end,
     ["character"] = function(entity, placeholder_name) return hotswap_item_in_character_inventory(entity, placeholder_name) end,
-    ["logistic-container"] = function(entity, placname) return hotswap_in_logistic_inventory(entity, placeholder_name) end,
+    ["logistic-container"] = function(entity, placeholder_name) return hotswap_in_logistic_inventory(entity, placeholder_name) end,
     ["cargo-landing-pad"] = function(entity, placeholder_name) return hotswap_in_logistic_inventory(entity, placeholder_name) end,
     ["item-entity"] = function(entity, placeholder_name) return hotswap_on_ground(entity, placeholder_name) end,
 }
@@ -350,24 +373,97 @@ local defined_inventories = {
     ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
 }
 
+local PREFIX_RS = "random_spoil_"
+local PREFIX_CS = "conditional_spoil"
+
+-- Function to validate prefix and extract suffix
+--[[local function get_suffix_and_prefix_from_effect_id(effect_id)
+    if string.sub(effect_id, 1, #PREFIX) == PREFIX then
+        local suffix = string.sub(effect_id, #PREFIX + 1)
+        return {PREFIX, suffix} -- Return both the prefix and the suffix
+    end
+    return nil, nil -- Return nil values if the prefix doesn't match
+end]]
+
+-- Function to validate prefix and extract suffix
+local function get_suffix_and_prefix_from_effect_id(effect_id)
+    -- Split the effect_id into words by "_"
+    local first_word, second_word, rest = string.match(effect_id, "^(%w+)_(%w+)_(.+)$")
+    
+    -- Check if the prefix matches the known prefixes
+    local prefix = first_word .. "_" .. second_word
+    if prefix == PREFIX_RS or prefix == PREFIX_CS then
+        return {prefix, rest} -- Return the matching prefix and the remaining part as the suffix
+    end
+
+    -- Return nil if no valid prefix matches
+    return nil, nil
+end
 
 
-local function on_spoil(event)
+
+--[[local function on_spoil(event)
     local prefix_suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
-    if event.source_entity then
-        if prefix_suffix[1] == PREFIX then
-            local swap_func = generic_source_handler[event.source_entity.type]
-            if swap_func ~= nil then
-                swap_func(event.source_entity, prefix_suffix[2])
-            else
-                hotswap_in_generic_inventory(event.source_entity, prefix_suffix[2], defined_inventories[event.source_entity.type])
+    if prefix_suffix ~= nil then
+            local prefix = prefix_suffix[1]
+            local suffix = prefix_suffix[2]
+        if event.source_entity then
+            if prefix == PREFIX_RS then
+                local swap_func = generic_source_handler[event.source_entity.type]
+                if swap_func ~= nil then
+                    swap_func(event.source_entity, suffix)
+                else
+                    hotswap_in_generic_inventory(event.source_entity, suffix, defined_inventories[event.source_entity.type])
+                end
+            elseif prefix == PREFIX_CS then
+                local spoilage_definition = placeholder_to_result_conditional[suffix]
+                local is_condition_met = spoilage_definition.condition(event)
+                if is_condition_met then
+                    storage.spoilage_mapping[suffix] = spoilage_definition.result_true
+                --elseif spoilage_definition.delete_on_failure then
+                --    storage.spoilage_mapping[suffix] = nil
+                else
+                    storage.spoilage_mapping[suffix] = spoilage_definition.result_false
+                end
             end
+        else
+            hotswap_on_position(event, suffix)
+        end
+    end
+end]]
+
+local function swap_item(event, placeholder)
+    if event.source_entity then
+        local swap_func = generic_source_handler[event.source_entity.type]
+        if swap_func ~= nil then
+            swap_func(event.source_entity, placeholder)
+        else
+            hotswap_in_generic_inventory(event.source_entity, placeholder, defined_inventories[event.source_entity.type])
         end
     else
-        hotswap_on_position(event, prefix_suffix[2])
+        hotswap_on_position(event, placeholder)
     end
 end
 
+local function on_spoil(event)
+    local prefix_suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
+    if prefix_suffix ~= nil then
+        local prefix = prefix_suffix[1]
+        local suffix = prefix_suffix[2]
+        if prefix == PREFIX_RS then
+            swap_item(event, suffix)
+        elseif prefix == PREFIX_CS then
+            local spoilage_definition = placeholder_to_result_conditional[suffix]
+            local is_condition_met = spoilage_definition.condition(event)
+            if is_condition_met then
+                storage.spoilage_mapping[suffix] = spoilage_definition.result_true
+            else
+                storage.spoilage_mapping[suffix] = spoilage_definition.result_false
+            end
+            swap_item(event, suffix)
+        end
+    end
+end
 
 
 script.on_event(defines.events.on_tick, function(event)

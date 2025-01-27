@@ -49,7 +49,7 @@ local mutation_e = {
                 {
                     {
                         type = "script",
-                        effect_id = "random_spoil_mutation-e",
+                        effect_id = "conditional_spoil_mutation-e",
                     },
 
                 }
