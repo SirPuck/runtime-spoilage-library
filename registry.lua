@@ -7,7 +7,7 @@ end
 
 
 local placeholder_to_possible_result_mapping = {
-    ["mutation-e"] = 
+    ["mutation-a"] = 
     {
         effect_name = "random_spoil_mutation-e",
         possible_results = {"iron-plate", "copper-plate"},
