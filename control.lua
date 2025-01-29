@@ -80,8 +80,8 @@ local function select_one_result_over_n_unweighted(placeholder_item, possible_ou
 end
 
 local function roll_dice()
-    for placeholder, outcomes in pairs(placeholder_to_possible_result_mapping) do
-        local result = select_one_result_over_n_unweighted(placeholder, outcomes)
+    for placeholder, parameters in pairs(placeholder_to_possible_result_mapping) do
+        local result = select_one_result_over_n_unweighted(placeholder, parameters.possible_results)
         storage.spoilage_mapping[placeholder] = result
     end
 end
@@ -374,63 +374,21 @@ local defined_inventories = {
 }
 
 local PREFIX_RS = "random_spoil_"
-local PREFIX_CS = "conditional_spoil"
+local PREFIX_CS = "conditional_spoil_"
 
--- Function to validate prefix and extract suffix
---[[local function get_suffix_and_prefix_from_effect_id(effect_id)
-    if string.sub(effect_id, 1, #PREFIX) == PREFIX then
-        local suffix = string.sub(effect_id, #PREFIX + 1)
-        return {PREFIX, suffix} -- Return both the prefix and the suffix
-    end
-    return nil, nil -- Return nil values if the prefix doesn't match
-end]]
 
--- Function to validate prefix and extract suffix
+---@type table<string, boolean|{prefix:string, suffix:string}>
+local cached_event_ids = {}
+
 local function get_suffix_and_prefix_from_effect_id(effect_id)
-    -- Split the effect_id into words by "_"
-    local first_word, second_word, rest = string.match(effect_id, "^(%w+)_(%w+)_(.+)$")
-    
-    -- Check if the prefix matches the known prefixes
-    local prefix = first_word .. "_" .. second_word
-    if prefix == PREFIX_RS or prefix == PREFIX_CS then
-        return {prefix, rest} -- Return the matching prefix and the remaining part as the suffix
+    local cached_value =  cached_event_ids[effect_id]
+    if cached_value == false or cached_value == nil then
+        return nil, nil
     end
-
-    -- Return nil if no valid prefix matches
-    return nil, nil
+    return cached_value.prefix, cached_value.suffix
 end
 
 
-
---[[local function on_spoil(event)
-    local prefix_suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
-    if prefix_suffix ~= nil then
-            local prefix = prefix_suffix[1]
-            local suffix = prefix_suffix[2]
-        if event.source_entity then
-            if prefix == PREFIX_RS then
-                local swap_func = generic_source_handler[event.source_entity.type]
-                if swap_func ~= nil then
-                    swap_func(event.source_entity, suffix)
-                else
-                    hotswap_in_generic_inventory(event.source_entity, suffix, defined_inventories[event.source_entity.type])
-                end
-            elseif prefix == PREFIX_CS then
-                local spoilage_definition = placeholder_to_result_conditional[suffix]
-                local is_condition_met = spoilage_definition.condition(event)
-                if is_condition_met then
-                    storage.spoilage_mapping[suffix] = spoilage_definition.result_true
-                --elseif spoilage_definition.delete_on_failure then
-                --    storage.spoilage_mapping[suffix] = nil
-                else
-                    storage.spoilage_mapping[suffix] = spoilage_definition.result_false
-                end
-            end
-        else
-            hotswap_on_position(event, suffix)
-        end
-    end
-end]]
 
 local function swap_item(event, placeholder)
     if event.source_entity then
@@ -446,10 +404,13 @@ local function swap_item(event, placeholder)
 end
 
 local function on_spoil(event)
-    local prefix_suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
-    if prefix_suffix ~= nil then
-        local prefix = prefix_suffix[1]
-        local suffix = prefix_suffix[2]
+    if event.effect_id then
+        local prefix, suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
+        
+        if prefix == nil or suffix == nil then
+            return
+        end
+
         if prefix == PREFIX_RS then
             swap_item(event, suffix)
         elseif prefix == PREFIX_CS then
@@ -462,6 +423,17 @@ local function on_spoil(event)
             end
             swap_item(event, suffix)
         end
+    end
+end
+
+local function cache_effects_ids()
+    for placeholder, parameters in pairs(placeholder_to_possible_result_mapping) do
+        local prefix_suffix = get_suffix_and_prefix_from_effect_id(parameters.effect_name)
+        cached_event_ids[placeholder] = {prefix = prefix_suffix[1], suffix = prefix_suffix[2]}
+    end
+    for placeholder, parameters in pairs(placeholder_to_result_conditional) do
+        local prefix_suffix = get_suffix_and_prefix_from_effect_id(parameters.effect_name)
+        cached_event_ids[placeholder] = {prefix = prefix_suffix[1], suffix = prefix_suffix[2]}
     end
 end
 

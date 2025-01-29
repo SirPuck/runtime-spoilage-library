@@ -7,12 +7,17 @@ end
 
 
 local placeholder_to_possible_result_mapping = {
-    ["mutation-e"] = {"iron-plate", "copper-plate"},
+    ["mutation-e"] = 
+    {
+        effect_name = "random_spoil_mutation-e",
+        possible_results = {"iron-plate", "copper-plate"},
+    },
 }
 
 local placeholder_to_result_conditional = {
     ["mutation-e"] = 
     {
+        effect_name = "conditional_spoil_mutation-e",
         condition = function(event) return check_if_evening(event) end,
         result_true = "iron-plate",
         result_false = nil
