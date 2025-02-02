@@ -80,7 +80,7 @@ local mutation_d = {
                 {
                     {
                         type = "script",
-                        effect_id = "random_spoil_mutation-e",
+                        effect_id = "rsl_mutation-e",
                     },
 
                 }
