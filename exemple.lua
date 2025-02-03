@@ -5,7 +5,7 @@ local mutation_a = {
     subgroup = "raw-material",
     stack_size = 10,
     spoil_ticks = 20,
-    spoil_result = "mutation-d"
+    spoil_result = "mutation-d",
 }
 
 local mutation_b = {
@@ -49,7 +49,7 @@ local mutation_e = {
                 {
                     {
                         type = "script",
-                        effect_id = "conditional_spoil_mutation-e",
+                        effect_id = "rsl_mutation-e",
                     },
 
                 }

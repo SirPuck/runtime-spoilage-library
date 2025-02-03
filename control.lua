@@ -2,21 +2,8 @@ local registry = require("registry")
 local spoilage_definitions = registry.spoilage_definitions
 local placeholder_to_result_conditional = registry.placeholder_to_result_conditional
 local enable_swap_in_assembler = false
-local possible_results = {}
+local possible_results = {[true] = {}, [false] = {}}
 local precomputed_weights = {}
-
---[[local item_params = {
-    ["rsl-itemtospoil"] = 
-    {
-        mode = {random = true, conditional = false, weighted = true},
-        placeholder_name = "placeholdername",
-        possible_results = {
-            {name = "iron-plate", weight = 1},
-            {name = "copper-plate", weight = 2}
-        },
-    }
-
-}]]
 
 local function preprocess_weights(original_item, possible_results, bool)
     local cumulative_weight = 0
@@ -50,15 +37,26 @@ local function build_random_spoils()
     for _, definition in pairs(spoilage_definitions) do
         if definition.mode.random and not definition.mode.weighted then
             local options = {}
-            for _, name in pairs(definition.possible_results) do
+            for _, name in pairs(definition.possible_results_true) do
                 table.insert(options, name)
             end
+            possible_results[true][definition.name] = options
+
+            local options = {}
+            for _, name in pairs(definition.possible_results_false) do
+                table.insert(options, name)
+            end
+            possible_results[false][definition.name] = options
         end
         if definition.mode.random and definition.mode.weighted then
             preprocess_weights(definition.name, definition.possible_results_true, true)
             if definition.possible_results_false ~= nil then
                 preprocess_weights(definition.name, definition.possible_results_true, false)
             end
+        end
+        if definition.mode.conditional and not (definition.mode.random or definition.mode.weighted) then
+            storage.spoilage_mapping[definition.name][true] = definition.possible_results_true[1].name
+            storage.spoilage_mapping[definition.name][false] = definition.possible_results_false[1].name
         end
     end
 end
@@ -172,11 +170,12 @@ local function roll_dice()
             storage.spoilage_mapping[state][placeholder] = weighted_choice(placeholder_data)
         end
     end
+    -- TODO unweighted
 end
 
 
 -- Inventory swapping functions
---------------------------------
+------------------------
 
 
 ---comment
