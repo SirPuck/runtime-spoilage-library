@@ -1,7 +1,10 @@
 local swap_funcs = {}
 -- Inventory swapping functions
 ------------------------
-
+local function select_result(placeholder_definition)
+    local options_list = placeholder_definition.possible_results[placeholder_definition.condition]
+    return placeholder_definition.selection_mode(options_list)
+end
 
 ---comment
 ---@param stack LuaItemStack
@@ -42,17 +45,18 @@ end
 function swap_funcs.hotswap_item_in_character_inventory(entity, placeholder_definition)
     local inventory = entity.get_main_inventory(defines.inventory.character_main)
     local placeholder_name = placeholder_definition.name
-    local result = storage.spoilage_mapping[placeholder_definition.condition][placeholder_definition.name]
     if inventory then
         local _placeholder_number = inventory.get_item_count(placeholder_name)
         if _placeholder_number > 0 then
+            local result = select_result(placeholder_definition)
             inventory.remove({name=placeholder_name, count=_placeholder_number})
             if result ~= nil then
                 inventory.insert({name = result, count = _placeholder_number})
             end
         end
         if entity.cursor_stack and entity.cursor_stack.valid_for_read and entity.cursor_stack.name == placeholder_name then
-            swap_funcs.set_or_nil_stack(entity.cursor_stack, result, entity.cursor_stack.count)
+            local result = select_result(placeholder_definition)
+            swap_funcs.set_or_nil_stack(entity.cursor_stack, result)
         end
     end
 end

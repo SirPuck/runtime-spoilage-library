@@ -4,7 +4,7 @@ local spoilage_definitions = registry.spoilage_definitions
 local placeholder_to_result_conditional = registry.placeholder_to_result_conditional
 local enable_swap_in_assembler = false
 local possible_results = {[true] = {}, [false] = {}}
-local precomputed_weights = {}
+
 
 local function weighted_choice(item)
     if not item then return nil end
@@ -55,68 +55,6 @@ local wip_exemple2 = {
         }
     }
 
-local function select_result(placeholder_definition)
-    local options_list = placeholder_definition.possible_results[placeholder_definition.condition]
-    local result = placeholder_definition.selection_mode(options_list)
-    return result
-end
-
-
-local function preprocess_weights(original_item, possible_results, bool)
-    local cumulative_weight = 0
-    local sorted_options = {}
-
-    -- Build sorted list of cumulative weights
-    for _, option in ipairs(possible_results) do
-        cumulative_weight = cumulative_weight + option.weight
-        table.insert(sorted_options, { cumulative_weight = cumulative_weight, name = option.name})
-    end
-
-    -- Ensure sorting is correct (ascending order)
-    table.sort(sorted_options, function(a, b)
-        return a.cumulative_weight < b.cumulative_weight
-    end)
-    if not precomputed_weights[original_item] then
-        precomputed_weights[original_item] = {}
-    end
-
-    precomputed_weights[original_item][bool] = 
-        {
-            cumulative_weight = cumulative_weight,
-            options = sorted_options
-        }
-
-end
-
-local function build_random_spoils()
-    for _, definition in pairs(spoilage_definitions) do
-        if definition.mode.random and not definition.mode.weighted then
-            local options = {}
-            for _, name in pairs(definition.possible_results_true) do
-                table.insert(options, name)
-            end
-            possible_results[true][definition.name] = options
-
-            local options = {}
-            for _, name in pairs(definition.possible_results_false) do
-                table.insert(options, name)
-            end
-            possible_results[false][definition.name] = options
-        end
-        if definition.mode.random and definition.mode.weighted then
-            preprocess_weights(definition.name, definition.possible_results_true, true)
-            if definition.possible_results_false ~= nil then
-                preprocess_weights(definition.name, definition.possible_results_true, false)
-            end
-        end
-        if definition.mode.conditional and not (definition.mode.random or definition.mode.weighted) then
-            storage.spoilage_mapping[definition.name][true] = definition.possible_results_true[1].name
-            storage.spoilage_mapping[definition.name][false] = definition.possible_results_false[1].name
-        end
-    end
-end
-
-
 
 -- Helper functions, will be moved later
 -----------------------------------
@@ -134,19 +72,6 @@ local function is_in_array(value, array)
 end
 
 
-local function select_result(placeholder)
-    local options = placeholder_to_possible_result_mapping[placeholder]
-    local mode = options
-    if mode.random then
-        if mode.weighted then
-            return "function_with_weights"
-        else
-            return "function_unweighted"
-        end
-    end
-
-end
-
 
 -- Random selection functions
 -----------------------------
@@ -160,31 +85,6 @@ local function select_one_result_over_two(placeholder_item, possible_outcomes, w
     return {placeholder_item = math.random() < (weights[1] / weight_sum) and possible_outcomes[1] or possible_outcomes[2]}
 end
 
---- @param placeholder_item string A string with the name of the item linked that will be linked to an outcome.
---- @param possible_outcomes string[] An array of strings containing item names.
---- @param weights integer[] An array of integers representing weights for the items.
---- @return string string containing a pair {placeholder_item = selected_outcome}
-local function select_one_result_over_n_weighted(placeholder_item, possible_outcomes, weights)
-    assert(#possible_outcomes == #weights, "Outcomes and weights must have the same length")
-
-    -- Compute the total weight
-    local total_weight = 0
-    for _, weight in ipairs(weights) do
-        total_weight = total_weight + weight
-    end
-
-    -- Generate a random integer in the range [1, total_weight]
-    local random_weight = math.random(1, total_weight)
-
-    -- Find which outcome corresponds to the random weight
-    local cumulative_weight = 0
-    for i, weight in ipairs(weights) do
-        cumulative_weight = cumulative_weight + weight
-        if random_weight <= cumulative_weight then
-            return possible_outcomes[i]
-        end
-    end
-end
 
 
 --- This function selects and returns one outcome with equals chances of selection from an array of 2 strings.
@@ -200,16 +100,6 @@ end
         storage.spoilage_mapping[placeholder] = result
     end
 end]]
-
-local function roll_dice()
-    for placeholder, bool in pairs(precomputed_weights) do
-        for state, placeholder_data in pairs(bool) do
-            storage.spoilage_mapping[state][placeholder] = weighted_choice(placeholder_data)
-        end
-    end
-    -- TODO unweighted
-end
-
 
 
 local generic_source_handler = {
@@ -234,9 +124,6 @@ local defined_inventories = {
     ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
 }
 
----local PREFIX_RS = "random_spoil"
----local PREFIX_RSW = "weighted_spoil"
----local PREFIX_CS = "conditional_spoil"
 
 local function split_suffix_and_prefix(effect_id)
     -- Check if the effect_id starts with "rsl_" and extract the suffix
@@ -300,27 +187,6 @@ local function on_spoil(event)
         end
     end
 end
---[[        if prefix == PREFIX_RS then
-            swap_item(event, suffix, spoilage_definition)
-        elseif prefix == PREFIX_CS then
-            local spoilage_definition = placeholder_to_result_conditional[suffix]
-            storage.spoilage_mapping[suffix] = spoilage_definition.result[spoilage_definition.condition(event)]
-            swap_item(event, suffix)
-        end
-    end
-end
-]]
-local function cache_effects_ids()
-    for placeholder, parameters in pairs(placeholder_to_possible_result_mapping) do
-        local prefix_suffix = get_suffix_and_prefix_from_effect_id(parameters.effect_name)
-        cached_event_ids[placeholder] = {prefix = prefix_suffix[1], suffix = prefix_suffix[2]}
-    end
-    for placeholder, parameters in pairs(placeholder_to_result_conditional) do
-        local prefix_suffix = get_suffix_and_prefix_from_effect_id(parameters.effect_name)
-        cached_event_ids[placeholder] = {prefix = prefix_suffix[1], suffix = prefix_suffix[2]}
-    end
-end
-
 
 script.on_event(defines.events.on_tick, function(event)
     if event.tick % 200 == 0 then
@@ -332,14 +198,12 @@ script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
 
 script.on_init(function()
-    build_random_spoils()
     storage.belt_mutator_counter = storage.belt_mutator_counter or 0
     storage.spoilage_mapping = storage.spoilage_mapping or {[true] = {}, [false] = {}}
 end
 )
 
 script.on_configuration_changed(function()
-    build_random_spoils()
     storage.belt_mutator_counter = storage.belt_mutator_counter or 0
     storage.spoilage_mapping = storage.spoilage_mapping or {[true] = {}, [false] = {}}
 end)
