@@ -1,3 +1,12 @@
+local function check_if_evening(event)
+    local surface = event.source_entity.surface
+    return surface.dusk < surface.daytime and surface.daytime < surface.dawn
+end
+
+
+
+
+
 local mutation_a = {
     type = "item",
     name = "mutation-a",
@@ -72,19 +81,21 @@ local mutation_d = {
         items_per_trigger = 1,
         trigger = 
         {
-            type = "direct",
-            action_delivery =
             {
-                type = "instant",
-                source_effects = 
+                type = "direct",
+                action_delivery =
                 {
+                    type = "instant",
+                    source_effects = 
                     {
-                        type = "script",
-                        effect_id = "rsl_mutation-e",
-                    },
+                        {
+                            type = "script",
+                            effect_id = "rsl_mutation-e",
+                        },
 
+                    }
                 }
-            }
+            },
         }
     }
 }

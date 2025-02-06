@@ -6,25 +6,7 @@ local enable_swap_in_assembler = false
 local possible_results = {[true] = {}, [false] = {}}
 
 
-local function weighted_choice(item)
-    if not item then return nil end
 
-    local r = math.random() * item.cumulative_weight
-    local options = item.options
-    local low, high = 1, #options
-
-    -- Binary search for correct cumulative weight
-    while low < high do
-        local mid = math.floor((low + high) / 2)
-        if options[mid].cumulative_weight < r then
-            low = mid + 1
-        else
-            high = mid
-        end
-    end
-
-    return options[low].name  -- Correctly selected option
-end
 
 local wip_exemple = {
     ["mutation-e"] = 
@@ -188,23 +170,16 @@ local function on_spoil(event)
     end
 end
 
-script.on_event(defines.events.on_tick, function(event)
-    if event.tick % 200 == 0 then
-        roll_dice()
-    end
-end)
 
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
 
 script.on_init(function()
-    storage.belt_mutator_counter = storage.belt_mutator_counter or 0
-    storage.spoilage_mapping = storage.spoilage_mapping or {[true] = {}, [false] = {}}
+
 end
 )
 
 script.on_configuration_changed(function()
-    storage.belt_mutator_counter = storage.belt_mutator_counter or 0
-    storage.spoilage_mapping = storage.spoilage_mapping or {[true] = {}, [false] = {}}
+
 end)
 

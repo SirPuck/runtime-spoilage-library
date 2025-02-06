@@ -67,7 +67,6 @@ end
 function swap_funcs.hotswap_in_belt(entity, placeholder_definition)
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
     local placeholder_name = placeholder_definition.name
-    local result = storage.spoilage_mapping[placeholder_definition.condition][placeholder_definition.name]
     for _, line in pairs(transport_lines) do
         if line.get_item_count(placeholder_name) == 0 then
             goto continue
@@ -75,6 +74,7 @@ function swap_funcs.hotswap_in_belt(entity, placeholder_definition)
         for i = 1, line.line_length do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder_name then
+                local result = select_result(placeholder_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
             end
         end
@@ -87,7 +87,6 @@ end
 --- @return nil
 function swap_funcs.hotswap_in_underground_belt(entity, placeholder_definition)
     local placeholder_name = placeholder_definition.name
-    local result = storage.spoilage_mapping[placeholder_definition.condition][placeholder_definition.name]
     local transport_lines = {
         entity.get_transport_line(defines.transport_line.left_line),
         entity.get_transport_line(defines.transport_line.left_underground_line),
@@ -103,6 +102,7 @@ function swap_funcs.hotswap_in_underground_belt(entity, placeholder_definition)
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder_name then
+                local result = select_result(placeholder_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
             end
         end
@@ -110,11 +110,12 @@ function swap_funcs.hotswap_in_underground_belt(entity, placeholder_definition)
     end
 end
 
-local function _hotswap_in_splitter_lines(lines, placeholder, result)
+local function _hotswap_in_splitter_lines(lines, placeholder, placeholder_definition)
     for _, line in pairs(lines) do
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder then
+                local result = select_result(placeholder_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
             end
         end
@@ -126,7 +127,6 @@ end
 --- @return nil
 function swap_funcs.hotswap_in_splitter(entity, placeholder_definition)
     local placeholder_name = placeholder_definition.name
-    local result = storage.spoilage_mapping[placeholder_definition.condition][placeholder_definition.name]
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
 
     for _, line in pairs(transport_lines) do
@@ -134,14 +134,14 @@ function swap_funcs.hotswap_in_splitter(entity, placeholder_definition)
             goto continue
         end
         for i = 1, #line.input_lines do
-            _hotswap_in_splitter_lines(line.input_lines, placeholder_name, result)
+            _hotswap_in_splitter_lines(line.input_lines, placeholder_name, placeholder_definition)
         end
         ::continue::
         if #line.output_lines == 0 then
             goto next_iter
         end
         for i = 1, #line.output_lines do
-            _hotswap_in_splitter_lines(line.output_lines, placeholder_name, result)
+            _hotswap_in_splitter_lines(line.output_lines, placeholder_name, placeholder_definition)
         end
         ::next_iter::
     end
@@ -152,9 +152,9 @@ end
 --- @param placeholder string containing all the items that have a random spoil result.
 --- @return nil
 function swap_funcs.hotswap_in_inserter_or_bot(entity, placeholder_definition)
-    local result = storage.spoilage_mapping[placeholder_definition.condition][placeholder_definition.name]
     --local result = math.random() < 0.5 and "iron-plate" or "copper-plate"
     if entity.held_stack.valid_for_read then
+        local result = select_result(placeholder_definition)
         swap_funcs.set_or_nil_stack(entity.held_stack, result)
     end
 end
@@ -187,7 +187,8 @@ function swap_funcs.hotswap_in_machine(entity, placeholder_definition)
                 if stack.valid_for_read and stack.name == placeholder_name then
                     --inventory.remove({name="mutation-e"})
                     --inventory.insert({name=storage.spoilage_mapping[placeholder], count=item_count})
-                    stack.set_stack({name=storage.spoilage_mapping[placeholder_definition.condition][placeholder_definition.name], count=item_count})
+                    local result = select_result(placeholder_definition)
+                    stack.set_stack({name=result, count=item_count})
                 end
             end
         end
