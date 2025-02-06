@@ -1,4 +1,5 @@
 local selection_funcs = require("selection")
+local registry = {}
 
 local placeholder_to_possible_result_mapping = {
     ["mutation-e"] = 
@@ -89,37 +90,19 @@ local placeholder_model = {
     hidden_in_factoriopedia = true,
 }
 
----@class ModeType
----@field random boolean
----@field conditional boolean
----@field weighted boolean
 
----@class RslArgs
----@field mode ModeType
----@field condition? any  # Optional, replace 'any' with specific type if known
----@field possible_results table<boolean, table>
-
--- Example args_model following the RslArgs structure
-local args_model = {
-    mode = {random = false, conditional = false, weighted = false},
-    condition = nil,
-    possible_results = {
-        [true] = {},
-        [false] = {}
-    }
-
-}
 
 ---comment
----@param item LuaItemPrototype your custom item
+---@param item data.ItemPrototype
 ---@param items_per_trigger int number of items needed to trigger the script
 ---@param custom_trigger TriggerItem 
-local function create_spoilage_components(item, items_per_trigger, custom_trigger)
+function registry.create_spoilage_components(item, items_per_trigger, custom_trigger)
     --- Build placeholder item
     local placeholder = table.deepcopy(placeholder_model)
     placeholder.name = item.name .. "-rsl-placeholder"
     placeholder.stack_size = item.stack_size
     placeholder.spoil_result = placeholder.name
+    placeholder.weight = item.weight
 
     item.spoil_to_trigger_result = 
     {
@@ -149,6 +132,8 @@ local function create_spoilage_components(item, items_per_trigger, custom_trigge
     if custom_trigger then
         table.insert(item.spoil_to_trigger_result.trigger, custom_trigger)
     end
-
+    item.spoil_result = placeholder.name
     data:extend{item, placeholder}
 end
+
+return registry

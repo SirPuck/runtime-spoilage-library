@@ -40,22 +40,22 @@ function swap_funcs.hotswap_stack_in_character_inventory(entity, placeholder)
 end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param placeholder string the name of the placeholder item.
+--- @param rsl_definition table the name of the placeholder item.
 --- @return nil
-function swap_funcs.hotswap_item_in_character_inventory(entity, placeholder_definition)
+function swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition)
     local inventory = entity.get_main_inventory(defines.inventory.character_main)
-    local placeholder_name = placeholder_definition.name
+    local placeholder_name = rsl_definition.name
     if inventory then
         local _placeholder_number = inventory.get_item_count(placeholder_name)
         if _placeholder_number > 0 then
-            local result = select_result(placeholder_definition)
+            local result = select_result(rsl_definition)
             inventory.remove({name=placeholder_name, count=_placeholder_number})
             if result ~= nil then
                 inventory.insert({name = result, count = _placeholder_number})
             end
         end
         if entity.cursor_stack and entity.cursor_stack.valid_for_read and entity.cursor_stack.name == placeholder_name then
-            local result = select_result(placeholder_definition)
+            local result = select_result(rsl_definition)
             swap_funcs.set_or_nil_stack(entity.cursor_stack, result)
         end
     end

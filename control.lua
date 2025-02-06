@@ -1,87 +1,18 @@
-local registry = require("registry")
+local runtime_registry = require("runtime_registry")
 local swap_funcs = require("swap_inventories")
-local spoilage_definitions = registry.spoilage_definitions
-local placeholder_to_result_conditional = registry.placeholder_to_result_conditional
+local registry = runtime_registry.registry
 local enable_swap_in_assembler = false
-local possible_results = {[true] = {}, [false] = {}}
 
-
-
-
-local wip_exemple = {
-    ["mutation-e"] = 
-        {
-            selection_mode = function(item) return weighted_choice(item) end,
-            name = "mutation-e",
-            condition = true,
-            possible_results= {
-            [true] = {
-                cumulative_weight = 3,
-                {name = "iron-plate", cumulative_weight = 1},
-                {name = "copper-plate", cumulative_weight = 3}
-            },
-            [false] = {}
-        },
-        }
-    }
-local wip_exemple2 = {
-    ["mutation-e"] = 
-        {
-            selection_mode = function(item) return item[1] end,
-            name = "mutation-e",
-            condition = true,
-            possible_results= {
-            [true] = {"something"},
-            [false] = {}
-        },
-        }
-    }
-
-
--- Helper functions, will be moved later
------------------------------------
-
--- Returns true if the given value is in the given array.
---- @param value any
---- @param array any
-local function is_in_array(value, array)
-    for _, v in ipairs(array) do
-        if v == value then
-            return true
-        end
+remote.add_interface("rsl_registry",
+    {
+    ---Register a new RSL definition remotely.
+    ---@param item_name string The name of the item the will spoil.
+    ---@param args RslArgs The arguments for the RSL definition.
+    register_rsl_definition = function(item_name, args)
+        registry.register_rsl_definition(item_name, args)
     end
-    return false
-end
-
-
-
--- Random selection functions
------------------------------
---- @param placeholder_item string A string with the name of the item linked that will be linked to an outcome.
---- @param possible_outcomes string[] An arra of two strings containing item names
---- @param weights number[] An array of two numbers representing weights for the items
---- @return string[] A table containing a pair {placeholder_item = selected_outcome}
-local function select_one_result_over_two(placeholder_item, possible_outcomes, weights)
-    assert(#possible_outcomes == 2 and #weights == 2, "Two outcomes and two weights required")
-    local weight_sum = weights[1] + weights[2]
-    return {placeholder_item = math.random() < (weights[1] / weight_sum) and possible_outcomes[1] or possible_outcomes[2]}
-end
-
-
-
---- This function selects and returns one outcome with equals chances of selection from an array of 2 strings.
---- @param possible_outcomes string[] An array of strings containing item names.
---- @return string string containing a pair {placeholder_item = selected_outcome}
-local function select_one_result_over_n_unweighted(placeholder_item, possible_outcomes)
-    return possible_outcomes[math.random(1, #possible_outcomes)]
-end
-
---[[local function roll_dice()
-    for placeholder, parameters in pairs(placeholder_to_possible_result_mapping) do
-        local result = select_one_result_over_n_unweighted(placeholder, parameters.possible_results)
-        storage.spoilage_mapping[placeholder] = result
-    end
-end]]
+    }
+)
 
 
 local generic_source_handler = {
@@ -114,10 +45,9 @@ local function split_suffix_and_prefix(effect_id)
     if prefix and suffix then
         return prefix, suffix -- Return the prefix and the remaining part as the suffix
     end
-    
+
     return nil, nil -- Return nil if no match
 end
-
 
 ---@type table<string, boolean|{prefix:string, suffix:string}>
 local cached_event_ids = {}
@@ -126,8 +56,10 @@ local function get_suffix_and_prefix_from_effect_id(effect_id)
     local cached_value =  cached_event_ids[effect_id]
     if cached_value == false then
         return nil, nil
+
     elseif cached_value == nil then
         local prefix, suffix = split_suffix_and_prefix(effect_id)
+
         if prefix ~= nil and suffix ~= nil then
             cached_event_ids[effect_id] = {prefix = prefix, suffix = suffix}
             cached_value = {prefix = prefix, suffix = suffix}
@@ -135,14 +67,15 @@ local function get_suffix_and_prefix_from_effect_id(effect_id)
             cached_event_ids[effect_id] = false
             return nil, nil
         end
+
     end
+
     return cached_value.prefix, cached_value.suffix
+
 end
 
-
-
 local function swap_item(event, placeholder)
-    local placeholder_definition = spoilage_definitions[placeholder]
+    local placeholder_definition = storage.rsl_definitions[placeholder]
     if event.source_entity then
         local swap_func = generic_source_handler[event.source_entity.type]
         if swap_func ~= nil then
@@ -162,8 +95,7 @@ local function on_spoil(event)
         if prefix == nil or suffix == nil then
             return
         end
-        --local spoilage_definition = spoilage_definitions[suffix]
-        --local result = storage.spoilage_mapping[suffix][spoilage_definition.condition]
+
         if prefix == "rsl_" then
             swap_item(event, suffix)
         end

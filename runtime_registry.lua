@@ -1,5 +1,29 @@
 local selection_funcs = require("selection")
 
+---@class ModeType
+---@field random boolean
+---@field conditional boolean
+---@field weighted boolean
+
+---@class RslArgs
+---@field mode ModeType
+---@field condition? function|true
+---@field possible_results table<boolean, table>
+
+-- Example args_model following the RslArgs structure
+local args_model = {
+    mode = {random = false, conditional = false, weighted = false},
+    condition = nil,
+    possible_results = {
+        [true] = {
+            {name = "", weight = 1}
+        },
+        [false] = {}
+    }
+}
+
+local registry = {}
+
 local function preprocess_weights(possible_results)
     local cumulative_weight = 0
     local sorted_options = {}
@@ -23,12 +47,14 @@ local function preprocess_weights(possible_results)
 end
 
 local rsl_definitions = {}
+storage.rsl_definitions = storage.rsl_definitions or {}
 ---comment
 ---@param item_name string
 ---@param args RslArgs
-local function register_rsl_definition(item_name, args)
+function registry.register_rsl_definition(item_name, args)
     local placeholder_name = item_name .. "-rsl-placeholder"
     local rsl_definition =  {
+            name = placeholder_name,
             possible_results = {
                 [true] = {},
                 [false] = {}
@@ -41,7 +67,7 @@ local function register_rsl_definition(item_name, args)
         rsl_definition.possible_results[true] = args.possible_results[true]
         rsl_definition.possible_results[false] = args.possible_results[true]
         rsl_definition.selection_mode = function(x) return x[1].name end
-        rsl_definitions[placeholder_name] = rsl_definition
+        storage.rsl_definitions[placeholder_name] = rsl_definition
         return
     end
     if args.mode.random then
@@ -54,16 +80,19 @@ local function register_rsl_definition(item_name, args)
         if args.possible_results[false] ~= nil then
             rsl_definition.possible_results[false] = preprocess_weights(args.possible_results[false])
         end
+    else
+        rsl_definition.selection_mode = function(x) return selection_funcs.select_one_result_over_n_unweighted(x) end
     end
     if args.mode.conditional then
         rsl_definition.condition = args.condition
     else
         rsl_definition.condition = true
     end
+    storage.rsl_definitions[placeholder_name] = rsl_definition
     return
 end
 
-local rsl_definitions = {
+local rsl_definitions_X = {
     ["mutation-e"] = 
         {
             selection_mode = function(item) return selection_funcs.weighted_choice(item) end,
@@ -82,7 +111,24 @@ local rsl_definitions = {
         }
     }
 
-return {
-    spoilage_definitions = rsl_definitions,
-}
 
+local registered_rsl_def_exemple = {
+    ["mutation-e"] = 
+        {
+            selection_mode = function(item) return selection_funcs.weighted_choice(item) end,
+            name = "mutation-e",
+            condition = true,
+            possible_results= {
+            [true] = {
+                cumulative_weight = 3,
+                {name = "iron-plate", cumulative_weight = 1},
+                {name = "copper-plate", cumulative_weight = 3}
+            },
+            [false] = {}
+        },
+        }
+    }
+
+return {
+    registry = registry,
+}
