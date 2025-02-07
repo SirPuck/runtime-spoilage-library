@@ -46,7 +46,6 @@ local function preprocess_weights(possible_results)
 
 end
 
-local rsl_definitions = {}
 storage.rsl_definitions = storage.rsl_definitions or {}
 ---comment
 ---@param item_name string
@@ -91,25 +90,6 @@ function registry.register_rsl_definition(item_name, args)
     storage.rsl_definitions[placeholder_name] = rsl_definition
     return
 end
-
-local rsl_definitions_X = {
-    ["mutation-e"] = 
-        {
-            selection_mode = function(item) return selection_funcs.weighted_choice(item) end,
-            name = "mutation-e",
-            condition = true,
-            possible_results= {
-            [true] = {
-                cumulative_weight = 3,
-                options = {
-                {name = "iron-plate", cumulative_weight = 1},
-                {name = "copper-plate", cumulative_weight = 3}
-                }
-            },
-            [false] = {}
-        },
-        }
-    }
 
 
 local registered_rsl_def_exemple = {

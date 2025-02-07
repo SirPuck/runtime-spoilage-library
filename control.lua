@@ -1,7 +1,7 @@
 local runtime_registry = require("runtime_registry")
 local swap_funcs = require("swap_inventories")
 local registry = runtime_registry.registry
-local enable_swap_in_assembler = false
+
 
 remote.add_interface("rsl_registry",
     {
@@ -16,17 +16,17 @@ remote.add_interface("rsl_registry",
 
 
 local generic_source_handler = {
-    ["inserter"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_inserter_or_bot(entity, placeholder_definition) end,
-    ["logistic-robot"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_inserter_or_bot(entity, placeholder_definition) end,
-    ["transport-belt"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_belt(entity, placeholder_definition) end,
-    ["loader"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_belt(entity, placeholder_definition) end,
-    ["underground-belt"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_underground_belt(entity, placeholder_definition) end,
-    ["splitter"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_splitter(entity, placeholder_definition) end,
-    ["assembling-machine"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_machine(entity, placeholder_definition) end,
-    ["character"] = function(entity, placeholder_definition) return swap_funcs.hotswap_item_in_character_inventory(entity, placeholder_definition) end,
-    ["logistic-container"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, placeholder_definition) end,
-    ["cargo-landing-pad"] = function(entity, placeholder_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, placeholder_definition) end,
-    ["item-entity"] = function(entity, placeholder_definition) return swap_funcs.hotswap_on_ground(entity, placeholder_definition) end,
+    ["inserter"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_inserter_or_bot(entity, rsl_definition) end,
+    ["logistic-robot"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_inserter_or_bot(entity, rsl_definition) end,
+    ["transport-belt"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_belt(entity, rsl_definition) end,
+    ["loader"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_belt(entity, rsl_definition) end,
+    ["underground-belt"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_underground_belt(entity, rsl_definition) end,
+    ["splitter"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_splitter(entity, rsl_definition) end,
+    ["assembling-machine"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_machine(entity, rsl_definition) end,
+    ["character"] = function(entity, rsl_definition) return swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition) end,
+    ["logistic-container"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition) end,
+    ["cargo-landing-pad"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition) end,
+    ["item-entity"] = function(entity, rsl_definition) return swap_funcs.hotswap_on_ground(entity, rsl_definition) end,
 }
 
 local defined_inventories = {
@@ -75,16 +75,16 @@ local function get_suffix_and_prefix_from_effect_id(effect_id)
 end
 
 local function swap_item(event, placeholder)
-    local placeholder_definition = storage.rsl_definitions[placeholder]
+    local rsl_definition = storage.rsl_definitions[placeholder]
     if event.source_entity then
         local swap_func = generic_source_handler[event.source_entity.type]
         if swap_func ~= nil then
-            swap_func(event.source_entity, placeholder_definition)
+            swap_func(event.source_entity, rsl_definition)
         else
-            swap_funcs.hotswap_in_generic_inventory(event.source_entity, placeholder_definition, defined_inventories[event.source_entity.type])
+            swap_funcs.hotswap_in_generic_inventory(event.source_entity, rsl_definition, defined_inventories[event.source_entity.type])
         end
     else
-        swap_funcs.hotswap_on_position(event, placeholder_definition)
+        swap_funcs.hotswap_in_position(event, rsl_definition)
     end
 end
 
@@ -106,7 +106,7 @@ end
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
 
-script.on_init(function()
+--[[script.on_init(function()
 
 end
 )
@@ -114,4 +114,4 @@ end
 script.on_configuration_changed(function()
 
 end)
-
+]]
