@@ -36,7 +36,7 @@ local placeholder_model = {
 ---@param item data.ItemPrototype
 ---@param items_per_trigger int number of items needed to trigger the script
 ---@param custom_trigger TriggerItem 
-function registry.create_spoilage_components(item, items_per_trigger, custom_trigger)
+function registry.register_spoilable_item(item, items_per_trigger, custom_trigger)
     --- Build placeholder item
     local placeholder = table.deepcopy(placeholder_model)
     placeholder.name = item.name .. "-rsl-placeholder"
