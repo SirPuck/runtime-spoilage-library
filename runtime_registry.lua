@@ -1,16 +1,21 @@
 local selection_funcs = require("selection")
 
+--- Defines the mode in which results are selected.
 ---@class ModeType
 ---@field random boolean
 ---@field conditional boolean
 ---@field weighted boolean
 
----@class RslArgs
----@field mode ModeType
----@field condition? function|true
----@field possible_results table<boolean, table>
+--- Represents a remote function call structure.
+---@class RemoteCall
+---@field remote_mod string The name of the mod exposing the function.
+---@field remote_function string The name of the function to call.
 
--- Example args_model following the RslArgs structure
+--- Arguments for registering an RSL definition.
+---@class RslArgs
+---@field mode ModeType The mode settings for result selection.
+---@field condition nil|boolean|RemoteCall The condition can be true, false, or a remote call structure.
+---@field possible_results table<boolean, {name: string, weight?: number}[]> The possible outcomes based on condition results.
 local args_model = {
     mode = {random = false, conditional = false, weighted = false},
     condition = nil,
