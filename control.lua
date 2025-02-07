@@ -2,7 +2,6 @@ local runtime_registry = require("runtime_registry")
 local swap_funcs = require("swap_inventories")
 local registry = runtime_registry.registry
 
-
 remote.add_interface("rsl_registry",
     {
     ---Register a new RSL definition remotely.
@@ -10,14 +9,13 @@ remote.add_interface("rsl_registry",
     ---@param args RslArgs The arguments for the RSL definition.
     register_rsl_definition = function(item_name, args)
         registry.register_rsl_definition(item_name, args)
-    end
-    }
+    end}
 )
 
 
 local generic_source_handler = {
-    ["inserter"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_inserter_or_bot(entity, rsl_definition) end,
-    ["logistic-robot"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_inserter_or_bot(entity, rsl_definition) end,
+    ["inserter"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_inserter(entity, rsl_definition) end,
+    ["logistic-robot"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_bot(entity, rsl_definition) end,
     ["transport-belt"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_belt(entity, rsl_definition) end,
     ["loader"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_belt(entity, rsl_definition) end,
     ["underground-belt"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_underground_belt(entity, rsl_definition) end,
@@ -27,6 +25,7 @@ local generic_source_handler = {
     ["logistic-container"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition) end,
     ["cargo-landing-pad"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition) end,
     ["item-entity"] = function(entity, rsl_definition) return swap_funcs.hotswap_on_ground(entity, rsl_definition) end,
+    ["furnace"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_furnace(entity, rsl_definition) end,
 }
 
 local defined_inventories = {
@@ -76,6 +75,7 @@ end
 
 local function swap_item(event, placeholder)
     local rsl_definition = storage.rsl_definitions[placeholder]
+    rsl_definition.event = event
     if event.source_entity then
         local swap_func = generic_source_handler[event.source_entity.type]
         if swap_func ~= nil then

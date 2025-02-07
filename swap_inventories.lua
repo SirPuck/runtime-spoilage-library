@@ -40,8 +40,18 @@ remote.add_interface("rsl_library", {
 -- Inventory swapping functions
 ------------------------
 local function select_result(rsl_definition)
-    local options_list = rsl_definition.possible_results[rsl_definition.condition]
-    return rsl_definition.selection_mode(options_list)
+    if rsl_definition.condition == true then
+        return rsl_definition.selection_mode(rsl_definition.possible_results[true])
+    end
+    local event = rsl_definition.event
+    if type(rsl_definition.condition) == "table" then
+        local result, success = pcall(remote.call, rsl_definition.condition.remote_mod, rsl_definition.condition.remote_function, event)
+        local options_list = rsl_definition.possible_results[success]
+        return rsl_definition.selection_mode(options_list)
+    end
+
+    --local options_list = rsl_definition.possible_results[success]
+    --return rsl_definition.selection_mode(options_list)
 end
 
 ---comment
@@ -169,7 +179,7 @@ end
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
-function swap_funcs.hotswap_in_inserter_or_bot(entity, rsl_definition)
+function swap_funcs.hotswap_in_inserter(entity, rsl_definition)
     --local result = math.random() < 0.5 and "iron-plate" or "copper-plate"
     if entity.held_stack.valid_for_read then
         local result = select_result(rsl_definition)
@@ -177,6 +187,17 @@ function swap_funcs.hotswap_in_inserter_or_bot(entity, rsl_definition)
     end
 end
 
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
+function swap_funcs.hotswap_in_bot(entity, rsl_definition)
+    --local result = math.random() < 0.5 and "iron-plate" or "copper-plate"
+    local stack = entity.get_inventory(1)[1]
+    if stack.valid_for_read then
+        local result = select_result(rsl_definition)
+        swap_funcs.set_or_nil_stack(stack, result)
+    end
+end
 
 
 
@@ -222,7 +243,7 @@ end
 function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, inventory_definition)
     local placeholder_name = rsl_definition.name
     local inventory = entity.get_inventory(inventory_definition)
-    local result = storage.spoilage_mapping[rsl_definition.condition][rsl_definition.name]
+    local result = select_result(rsl_definition)
     if inventory then
         local current_count = inventory.get_item_count(placeholder_name)
         if current_count > 0 then
@@ -236,11 +257,34 @@ end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param inventory_definition defines.inventory.car_trunk|defines.inventory.cargo_wagon|defines.inventory.chest|defines.inventory.hub_main|defines.inventory.rocket_silo_rocket
+--- @return nil
+function swap_funcs.hotswap_in_furnace(entity, rsl_definition)
+    local placeholder_name = rsl_definition.name
+    local inventory_result = entity.get_inventory(defines.inventory.furnace_result)
+    local inventory_input = entity.get_inventory(defines.inventory.furnace_source)
+    local inventories = {inventory_input, inventory_result}
+    local result = select_result(rsl_definition)
+    for _, inventory in pairs(inventories) do
+        if inventory then
+            local current_count = inventory.get_item_count(placeholder_name)
+            if current_count > 0 then
+                inventory.remove({name=placeholder_name, count=current_count})
+                if result ~= nil then
+                    inventory.insert({name=result, count = current_count})
+                end
+            end
+        end
+    end
+end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition)
     local placeholder_name = rsl_definition.name
     local inventories = {entity.get_inventory(defines.inventory.chest), entity.get_inventory(defines.inventory.logistic_container_trash)}
-    local result = storage.spoilage_mapping[rsl_definition.condition][rsl_definition.name]
+    local result = select_result(rsl_definition)
     for _, inventory in pairs(inventories) do
         local current_count = inventory.get_item_count(placeholder_name)
         if current_count > 0 then
@@ -259,7 +303,7 @@ end
 function swap_funcs.hotswap_in_generic_inventory_in_place(entity, rsl_definition, inventory_definition)
     local placeholder_name = rsl_definition.name
     local inventory = entity.get_inventory(inventory_definition)
-    local result = storage.spoilage_mapping[rsl_definition.condition][rsl_definition.name]
+    local result = select_result(rsl_definition)
     if inventory then
         local current_count = inventory.get_item_count(placeholder_name)
         if current_count > 0 then
@@ -277,7 +321,7 @@ end
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_on_ground(entity, rsl_definition)
-    return swap_funcs.set_or_nil_stack(entity.stack, storage.spoilage_mapping[rsl_definition.condition][rsl_definition.name] or nil)
+    return swap_funcs.set_or_nil_stack(entity.stack, select_result(rsl_definition) or nil)
 end
 
 --- @param event EventData.on_script_trigger_effect
@@ -292,7 +336,7 @@ function swap_funcs.hotswap_in_position(event, rsl_definition)
         }
     )
     if entity and entity[1] and entity[1].stack.name == rsl_definition.name then
-        swap_funcs.set_or_nil_stack(entity[1].stack, storage.spoilage_mapping[rsl_definition.condition][rsl_definition.name] or nil)
+        swap_funcs.set_or_nil_stack(entity[1].stack, select_result(rsl_definition) or nil)
     end
 end
 

@@ -82,7 +82,4 @@ function registry.create_spoilage_components(item, items_per_trigger, custom_tri
     data:extend{item, placeholder}
 end
 
-return {
-    registry,
-    placeholder_spoil_into_self
-}
+return registry

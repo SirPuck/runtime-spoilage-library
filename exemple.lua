@@ -1,7 +1,3 @@
-local function check_if_evening(event)
-    local surface = event.source_entity.surface
-    return surface.dusk < surface.daytime and surface.daytime < surface.dawn
-end
 
 
 
@@ -99,35 +95,3 @@ local mutation_d = {
         }
     }
 }
-
-data:extend{mutation_a, mutation_b, mutation_c, mutation_d, mutation_e}
-
-data:extend{
-    {
-    type="recipe",
-    name="mutation",
-    ingredients = {
-        {type="item", name="iron-plate", amount = 1}
-    },
-    icon = "__base__/graphics/icons/production-science-pack.png",
-    enabled = true,
-    results = {
-        {type = "item", name = "mutation-a", amount = 1},
-    }
-}
-}
-
-local my_recipe = 
-    {
-    type="recipe",
-    name="mutation-x",
-    ingredients = {
-        {type="item", name="mutation-b", amount = 1}
-    },
-    enabled = true,
-    results = {
-        {type = "item", name = "mutation-a", amount = 1}
-    }
-}
-
-data:extend{my_recipe}

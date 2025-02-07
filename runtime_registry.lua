@@ -57,7 +57,8 @@ function registry.register_rsl_definition(item_name, args)
             possible_results = {
                 [true] = {},
                 [false] = {}
-            }
+            },
+            event = nil
         }
 
     --- Build the outcomes
