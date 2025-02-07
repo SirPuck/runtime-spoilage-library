@@ -4,8 +4,10 @@ local enable_swap_in_assembler = false
 
 remote.add_interface("rsl_library", {
     --- Enable or disable swap in assembler functionality.
+    --- To be clear : this doesn't work. We can replace items arbitrarly at runtime in an assembler
+    --- because its slots only accepts items based on the selected recipe. So this is just here as a placeholder for later.
     ---@param state boolean Whether to enable (true) or disable (false) the feature.
-    set_swap_in_assembler = function(state)
+    set_swap_in_assembler_BROKEN = function(state)
         if type(state) ~= "boolean" then
             error("Invalid parameter: 'state' must be a boolean.")
         end
@@ -185,6 +187,9 @@ end
 -- Tried both remove/insert and set stack. Only the results of the recipe are allowed.
 -- Since this mod's goal is to control the spoil results at runtime, it would make
 -- no sense to integrate these results in the recipes, unless you really want to.
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
 function swap_funcs.hotswap_in_machine(entity, rsl_definition)
     if enable_swap_in_assembler == false then
         return
@@ -202,7 +207,8 @@ function swap_funcs.hotswap_in_machine(entity, rsl_definition)
                 local stack = inventory[i]
                 if stack.valid_for_read and stack.name == placeholder_name then
                     local result = select_result(rsl_definition)
-                    stack.set_stack({name=result, count=item_count})
+                    swap_funcs.set_or_nil_stack(stack, result)
+                    --stack.set_stack({name=result, count=item_count})
                 end
             end
         end
