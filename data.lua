@@ -1,1 +1,1 @@
-require("exemple")
+require("data_registry")
