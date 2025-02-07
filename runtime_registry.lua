@@ -99,15 +99,15 @@ end
 
 
 local registered_rsl_def_exemple = {
-    ["mutation-e"] = 
+    ["iron-plate-rsl-placeholder"] = 
         {
             selection_mode = function(item) return selection_funcs.weighted_choice(item) end,
-            name = "mutation-e",
+            name = "iron-plate-rsl-placeholder",
             condition = true,
             possible_results= {
             [true] = {
                 cumulative_weight = 3,
-                {name = "iron-plate", cumulative_weight = 1},
+                {name = "iron-ore", cumulative_weight = 1},
                 {name = "copper-plate", cumulative_weight = 3}
             },
             [false] = {}
