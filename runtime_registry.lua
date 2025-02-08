@@ -51,7 +51,7 @@ local function preprocess_weights(possible_results)
 
 end
 
-storage.rsl_definitions = storage.rsl_definitions or {}
+registry.rsl_definitions = registry.rsl_definitions or {}
 ---comment
 ---@param item_name string
 ---@param args RslArgs
@@ -72,7 +72,7 @@ function registry.register_rsl_definition(item_name, args)
         rsl_definition.possible_results[true] = args.possible_results[true]
         rsl_definition.possible_results[false] = args.possible_results[true]
         rsl_definition.selection_mode = function(x) return x[1].name end
-        storage.rsl_definitions[placeholder_name] = rsl_definition
+        registry.rsl_definitions[placeholder_name] = rsl_definition
         return
     end
     if args.mode.random then
@@ -93,7 +93,7 @@ function registry.register_rsl_definition(item_name, args)
     else
         rsl_definition.condition = true
     end
-    storage.rsl_definitions[placeholder_name] = rsl_definition
+    registry.rsl_definitions[placeholder_name] = rsl_definition
     return
 end
 

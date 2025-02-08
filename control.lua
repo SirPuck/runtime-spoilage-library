@@ -1,6 +1,7 @@
 local runtime_registry = require("runtime_registry")
 local swap_funcs = require("swap_inventories")
 local registry = runtime_registry.registry
+local rsl_definitions = registry.rsl_definitions
 
 remote.add_interface("rsl_registry",
     {
@@ -74,7 +75,7 @@ local function get_suffix_and_prefix_from_effect_id(effect_id)
 end
 
 local function swap_item(event, placeholder)
-    local rsl_definition = storage.rsl_definitions[placeholder]
+    local rsl_definition = rsl_definitions[placeholder]
     rsl_definition.event = event
     if event.source_entity then
         local swap_func = generic_source_handler[event.source_entity.type]
@@ -106,12 +107,24 @@ end
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
 
---[[script.on_init(function()
+script.on_init(function()
+    storage.qualities = {}
 
-end
-)
+    for quality in string.gmatch(settings.startup["qualities"].value, "([^,]+)") do
+        table.insert(storage.qualities, quality)
+    end
 
-script.on_configuration_changed(function()
-
+    game.print("storage.qualities initialized from startup settings!")
 end)
-]]
+
+script.on_configuration_changed(function(event)
+    if event.mod_changes["runtime-spoilage-library"] then
+        storage.qualities = {}
+
+        for quality in string.gmatch(settings.startup["qualities"].value, "([^,]+)") do
+            table.insert(storage.qualities, quality)
+        end
+
+        game.print("storage.qualities updated after mod configuration change!")
+    end
+end)
