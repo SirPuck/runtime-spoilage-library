@@ -2,6 +2,9 @@ local swap_funcs = {}
 
 local enable_swap_in_assembler = false
 
+
+
+
 remote.add_interface("rsl_library", {
     --- Enable or disable swap in assembler functionality.
     --- To be clear : this doesn't work. We can replace items arbitrarly at runtime in an assembler
@@ -59,11 +62,12 @@ end
 ---@param result string|nil
 function swap_funcs.set_or_nil_stack(stack, result)
     if result ~= nil then
-        stack.set_stack({ name = result, count = stack.count })
+        stack.set_stack({ name = result, count = stack.count, quality=stack.quality })
     else
         stack.set_stack(nil)
     end
 end
+
 
 
 
@@ -74,14 +78,18 @@ function swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition)
     local inventory = entity.get_main_inventory(defines.inventory.character_main)
     local placeholder_name = rsl_definition.name
     if inventory then
-        local _placeholder_number = inventory.get_item_count(placeholder_name)
-        if _placeholder_number > 0 then
-            local result = select_result(rsl_definition)
-            inventory.remove({name=placeholder_name, count=_placeholder_number})
-            if result ~= nil then
-                inventory.insert({name = result, count = _placeholder_number})
+        --local _placeholder_number = inventory.get_item_count(placeholder_name)
+        for _, quality in pairs(storage.qualities) do
+            removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+            if removed > 0 then
+                local result = select_result(rsl_definition)
+                if result ~= nil then
+                    inventory.insert({name=result, count=removed, quality=quality})
+                end
+                goto continue
             end
         end
+        ::continue::
         if entity.cursor_stack and entity.cursor_stack.valid_for_read and entity.cursor_stack.name == placeholder_name then
             local result = select_result(rsl_definition)
             swap_funcs.set_or_nil_stack(entity.cursor_stack, result)
@@ -96,17 +104,13 @@ function swap_funcs.hotswap_in_belt(entity, rsl_definition)
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
     local placeholder_name = rsl_definition.name
     for _, line in pairs(transport_lines) do
-        if line.get_item_count(placeholder_name) == 0 then
-            goto continue
-        end
-        for i = 1, line.line_length do
-            local stack = line[i]
+        for i = 1, #line do
+            local success, stack = pcall(function() return line[i] end)
             if stack.valid_for_read and stack.name == placeholder_name then
                 local result = select_result(rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
             end
         end
-        ::continue::
     end
 end
 
@@ -124,9 +128,9 @@ function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
         entity.get_transport_line(defines.transport_line.secondary_right_line),
     }
     for _, line in pairs(transport_lines) do
-        if line.get_item_count(placeholder_name) == 0 then
+--[[        if line.get_item_count(placeholder_name) == 0 then
             goto continue
-        end
+        end]]
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder_name then
@@ -134,7 +138,7 @@ function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
             end
         end
-        ::continue::
+--        ::continue::
     end
 end
 
@@ -222,14 +226,16 @@ function swap_funcs.hotswap_in_machine(entity, rsl_definition)
 --    local trash = entity.get_inventory(8)
     local inventories = {input, output, dump}
     for _, inventory in pairs(inventories) do
-        local item_count = inventory.get_item_count(placeholder_name)
-        if item_count > 0 then
-            for i = 1, #inventory do
-                local stack = inventory[i]
-                if stack.valid_for_read and stack.name == placeholder_name then
-                    local result = select_result(rsl_definition)
-                    swap_funcs.set_or_nil_stack(stack, result)
-                    --stack.set_stack({name=result, count=item_count})
+        for _, quality in pairs(storage.qualities) do
+            local item_count = inventory.get_item_count({name=placeholder_name, quality=quality})
+            if item_count > 0 then
+                for i = 1, #inventory do
+                    local stack = inventory[i]
+                    if stack.valid_for_read and stack.name == placeholder_name then
+                        local result = select_result(rsl_definition)
+                        swap_funcs.set_or_nil_stack(stack, result)
+                        --stack.set_stack({name=result, count=item_count})
+                    end
                 end
             end
         end
@@ -245,11 +251,14 @@ function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, invento
     local inventory = entity.get_inventory(inventory_definition)
     local result = select_result(rsl_definition)
     if inventory then
-        local current_count = inventory.get_item_count(placeholder_name)
-        if current_count > 0 then
-            inventory.remove({name=placeholder_name, count=current_count})
-            if result ~= nil then
-                inventory.insert({name=result, count = current_count})
+        for _, quality in pairs(storage.qualities) do
+            removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+            if removed > 0 then
+                local result = select_result(rsl_definition)
+                if result ~= nil then
+                    inventory.insert({name=result, count=removed, quality=quality})
+                end
+                return
             end
         end
     end
@@ -267,11 +276,14 @@ function swap_funcs.hotswap_in_furnace(entity, rsl_definition)
     local result = select_result(rsl_definition)
     for _, inventory in pairs(inventories) do
         if inventory then
-            local current_count = inventory.get_item_count(placeholder_name)
-            if current_count > 0 then
-                inventory.remove({name=placeholder_name, count=current_count})
-                if result ~= nil then
-                    inventory.insert({name=result, count = current_count})
+            for _, quality in pairs(storage.qualities) do
+                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                if removed > 0 then
+                    local result = select_result(rsl_definition)
+                    if result ~= nil then
+                        inventory.insert({name=result, count=removed, quality=quality})
+                    end
+                    return
                 end
             end
         end
@@ -286,11 +298,16 @@ function swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition)
     local inventories = {entity.get_inventory(defines.inventory.chest), entity.get_inventory(defines.inventory.logistic_container_trash)}
     local result = select_result(rsl_definition)
     for _, inventory in pairs(inventories) do
-        local current_count = inventory.get_item_count(placeholder_name)
-        if current_count > 0 then
-            inventory.remove({name=placeholder_name, count=current_count})
-            if result ~= nil then
-                inventory.insert({name=result, count = current_count})
+        if inventory then
+            for _, quality in pairs(storage.qualities) do
+                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                if removed > 0 then
+                    local result = select_result(rsl_definition)
+                    if result ~= nil then
+                        inventory.insert({name=result, count=removed, quality=quality})
+                    end
+                    return
+                end
             end
         end
     end
@@ -303,14 +320,16 @@ end
 function swap_funcs.hotswap_in_generic_inventory_in_place(entity, rsl_definition, inventory_definition)
     local placeholder_name = rsl_definition.name
     local inventory = entity.get_inventory(inventory_definition)
-    local result = select_result(rsl_definition)
+    
     if inventory then
         local current_count = inventory.get_item_count(placeholder_name)
         if current_count > 0 then
             for i = 1, #inventory do
                 local stack = inventory[i]
                 if stack.valid_for_read and stack.name == placeholder_name then
-                    stack.set_stack({ name = result, count = stack.count })
+                    local result = select_result(rsl_definition)
+                    swap_funcs.set_or_nil_stack(stack, result)
+                    return
                 end
             end
         end
