@@ -266,7 +266,6 @@ end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param rsl_definition RslDefinition the name of the placeholder item.
---- @param inventory_definition defines.inventory.car_trunk|defines.inventory.cargo_wagon|defines.inventory.chest|defines.inventory.hub_main|defines.inventory.rocket_silo_rocket
 --- @return nil
 function swap_funcs.hotswap_in_furnace(entity, rsl_definition)
     local placeholder_name = rsl_definition.name
