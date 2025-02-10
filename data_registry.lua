@@ -35,13 +35,14 @@ local placeholder_model = {
 ---comment
 ---@param item data.ItemPrototype
 ---@param items_per_trigger int number of items needed to trigger the script
+---@param fallback_spoilage string the item that will be used if the script cannot transform your item. (Like in furnaces or assembling machines). Default is nil (the item will just disappear on spoil) but you should either put "spoilage" or any item of your choice.
 ---@param custom_trigger TriggerItem 
-function registry.register_spoilable_item(item, items_per_trigger, custom_trigger)
+function registry.register_spoilable_item(item, items_per_trigger, fallback_spoilage, custom_trigger)
     --- Build placeholder item
     local placeholder = table.deepcopy(placeholder_model)
     placeholder.name = item.name .. "-rsl-placeholder"
     placeholder.stack_size = item.stack_size
-    placeholder.spoil_result = placeholder.name
+
     placeholder.weight = item.weight
 
     item.spoil_to_trigger_result = 
@@ -75,7 +76,7 @@ function registry.register_spoilable_item(item, items_per_trigger, custom_trigge
     item.spoil_result = placeholder.name
 
     if not placeholder_spoil_into_self then
-        placeholder.spoil_result = nil
+        placeholder.spoil_result = fallback_spoilage or nil
         placeholder.spoil_to_trigger_result = nil
     end
 
