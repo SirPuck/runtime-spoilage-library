@@ -35,7 +35,7 @@ local rsl = require("__runtime-spoilage-library__/data_registry")
 ```
 You can then call the registry doing :
 ```lua
-rsl.register_spoilable_item(youritemtable, number of items to trigger)
+rsl.register_spoilable_item(youritemtable, number of items to trigger, fallback_item_name (optional), custom script (optional) )
 ```
 In your control.lua, you will need to make a remote call to RSL and pass it your item name and a list of args :
 
