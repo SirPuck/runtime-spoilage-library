@@ -121,36 +121,33 @@ local effect =
 In your control.lua :
 Simple exemple : 
 ```lua
-script.on_init(function()
-  remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
-      mode = { random = true, conditional = true, weighted = true },
-      condition = true,  -- There is no check, this is always true
-      possible_results = {
-          [true] = {
-                      { name = "iron-plate", weight = 1}, -- Possible result 1
-                      { name = "copper-plate", weight = 4} -- Possible result 2
-                    },
-          [false] = {} -- We don't care about that because our condition key has the value true at all times
-          }
-      }
-  )
+
+local function call_remote()
+    remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
+    mode = { random = true, conditional = true, weighted = false },
+    condition = {
+            remote_mod = "exemple-rsl",      -- Your mod name here
+            remote_function = "is_evening",         -- The function name to call
+        },  -- Example condition
+    possible_results = {
+        [true] = {{ name = "iron-plate"}, { name = "copper-plate"}},
+        [false] = {{ name = "copper-plate"}}
+        }
+    }
+)
 end
+
+script.on_load(
+    call_remote()
 )
 
-script.on_configuration_changed(function()
-  remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { 
-      mode = { random = true, conditional = true, weighted = true },
-      condition = true,  -- There is no check, this is always true
-      possible_results = {
-          [true] = {
-                      { name = "iron-plate", weight = 1},
-                      { name = "copper-plate", weight = 4}
-                    },
-          [false] = {} 
-          }
-      }
-  )
-end
+
+script.on_init(
+    call_remote()
+)
+
+script.on_configuration_changed(
+    call_remote()
 )
 ```
 
@@ -166,7 +163,7 @@ end
 
 
 --- If you use a function like the one writte above, you will need to provide a remote interface to RSL
-remote.add_interface("exemple-rsl", {
+remote.add_interface("your-mod-name", {
     --- Custom condition function to check if it's evening
     --- @return boolean
     is_evening = function(event)
@@ -175,37 +172,33 @@ remote.add_interface("exemple-rsl", {
     end
 })
 
-
-script.on_init(function()
-  remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
-      mode = { random = true, conditional = true, weighted = false },
-      condition = {
-              remote_mod = "exemple-rsl",      -- Your mod name here
-              remote_function = "is_evening",         -- The function name to call
-          },  -- Example condition
-      possible_results = {
-          [true] = {{ name = "iron-plate"}, { name = "copper-plate"}},
-          [false] = {{ name = "copper-plate"}}
-          }
-      }
-  )
+local function call_remote()
+    remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
+    mode = { random = true, conditional = true, weighted = false },
+    condition = {
+            remote_mod = "exemple-rsl",      -- Your mod name here
+            remote_function = "is_evening",         -- The function name to call
+        },  -- Example condition
+    possible_results = {
+        [true] = {{ name = "iron-plate"}, { name = "copper-plate"}},
+        [false] = {{ name = "copper-plate"}}
+        }
+    }
+)
 end
+
+
+script.on_load(
+    call_remote()
 )
 
-script.on_configuration_changed(function()
-  remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
-      mode = { random = true, conditional = true, weighted = false },
-      condition = {
-              remote_mod = "exemple-rsl",      -- Your mod name here
-              remote_function = "is_evening",         -- The function name to call
-          },  -- Example condition
-      possible_results = {
-          [true] = {{ name = "iron-plate"}, { name = "copper-plate"}},
-          [false] = {{ name = "copper-plate"}}
-          }
-      }
-  )
-end
+
+script.on_init(
+    call_remote()
+)
+
+script.on_configuration_changed(
+    call_remote()
 )
 
 ```
