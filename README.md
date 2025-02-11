@@ -125,10 +125,7 @@ Simple exemple :
 local function call_remote()
     remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
     mode = { random = true, conditional = true, weighted = false },
-    condition = {
-            remote_mod = "exemple-rsl",      -- Your mod name here
-            remote_function = "is_evening",         -- The function name to call
-        },  -- Example condition
+    condition = true,
     possible_results = {
         [true] = {{ name = "iron-plate"}, { name = "copper-plate"}},
         [false] = {{ name = "copper-plate"}}
