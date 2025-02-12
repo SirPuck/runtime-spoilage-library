@@ -155,7 +155,7 @@ script.on_configuration_changed(
 
 Advanced :
 ```lua
---- Optional : A function of your to check if a condition is true for your item to spoil.
+--- Optional : A function of yours to check if a condition is true for your item to spoil.
 local function check_if_evening(event)
     local surface = event.source_entity.surface
     return surface.dusk < surface.daytime and surface.daytime < surface.dawn
