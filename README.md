@@ -67,10 +67,11 @@ local args_model = {
     }
 }
 ```
-```lua
+
 To register a remote call to your mod as a condition, do       
+```lua
 condition = { -- Example condition
-              remote_mod = "exemple-rsl",      -- Your mod name here
+              remote_mod = "your-mod-name",      -- Your mod name here
               remote_function = "func_name",         -- The function name to call
           },
 
