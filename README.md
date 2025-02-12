@@ -19,7 +19,7 @@ All these things are possible.
 
 # Limitations (read this, please, like, really, this is important)
 
-I included two switches : "placeholder_spoil_into_self" in the data_registry module, and "enable_swap_in_assembler" in the swap_inventories module.
+I included two switches : "placeholder_spoil_into_self" in the data_registry module, and "enable_swap_in_assembler" in the swap_inventories module. They are both set to false by default.
 
 For assembling machines, and furnaces, for instance, it's impossible to insert "any item I want" at runtime. Meaning... if you try to use RSL on an item that's inside an assembling machine,
 the mod will simply delete it, if the switch enable_swap_in_assembler is TRUE, because it cannot insert another item in its place if it's not part of the recipe currently setup on the machine. 
