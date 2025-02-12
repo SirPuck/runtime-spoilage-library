@@ -31,7 +31,6 @@ local placeholder_model = {
 }
 
 
-
 ---comment
 ---@param item data.ItemPrototype
 ---@param items_per_trigger int number of items needed to trigger the script

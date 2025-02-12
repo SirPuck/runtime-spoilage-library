@@ -107,24 +107,6 @@ end
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
 
-script.on_init(function()
-    storage.qualities = {}
+--script.on_init(function()end)
 
-    for quality in string.gmatch(settings.startup["qualities"].value, "([^,]+)") do
-        table.insert(storage.qualities, quality)
-    end
-
-    game.print("storage.qualities initialized from startup settings!")
-end)
-
-script.on_configuration_changed(function(event)
-    if event.mod_changes["runtime-spoilage-library"] then
-        storage.qualities = {}
-
-        for quality in string.gmatch(settings.startup["qualities"].value, "([^,]+)") do
-            table.insert(storage.qualities, quality)
-        end
-
-        game.print("storage.qualities updated after mod configuration change!")
-    end
-end)
+--script.on_configuration_changed(function(event)end)
