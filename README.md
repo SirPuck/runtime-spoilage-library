@@ -96,7 +96,9 @@ local mutation_a = {
 ---Params :
 1) item
 2) number of items needed to trigger a runtime spoilage replacement / script effect
-2) trigger (optional) you may add another triggered effect
+3) placeholder fallback spoiling result (used in case the script cannot replace the item at runtime. If you don't set anything, the item will just be deleted like if it spoiled into nothing if this happens. For instance, unless you are an advanced user and know how you can handle furnaces and assembling machines, you better set something here like "spoilage")
+4) trigger (optional) you may add another triggered effect
+ 
 rsl.register_spoilable_item(mutation_a, 1)
 
 ```
