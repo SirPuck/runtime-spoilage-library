@@ -17,6 +17,7 @@ remote.add_interface("rsl_registry",
 local generic_source_handler = {
     ["inserter"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_inserter(entity, rsl_definition) end,
     ["logistic-robot"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_bot(entity, rsl_definition) end,
+    ["construction-robot"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_bot(entity, rsl_definition) end,
     ["transport-belt"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_belt(entity, rsl_definition) end,
     ["loader"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_belt(entity, rsl_definition) end,
     ["underground-belt"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_underground_belt(entity, rsl_definition) end,

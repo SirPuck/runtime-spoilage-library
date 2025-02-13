@@ -80,8 +80,6 @@ function swap_funcs.set_or_nil_stack(stack, result)
 end
 
 
-
-
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
