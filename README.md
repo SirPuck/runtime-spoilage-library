@@ -143,7 +143,7 @@ local function call_remote()
     condition = true,
     possible_results = {
         [true] = {{ name = "iron-plate"}, { name = "copper-plate"}},
-        [false] = {{ name = "copper-plate"}}
+        [false] = {}
         }
     }
 )
