@@ -1,7 +1,6 @@
 # Presentation
 ---------
 RSL, for Runtime Spoilage Library, is a set of tools meant to be as straightforward as possible for modders to change the spoil result of items at runtime.
-As you can guess, this can cause serious performance issues if a great many number of items ALL spoil at the same tick. But don't let yourself be discouraged by that because this scenario is quite unlikely to happen in real life use.
 
 For now, RSL allows you to define a spoilable item, and how and by what it should be replaced.
 The goal of RSL is, at first, to allow you to specify multiple possible outcomes for a spoilable item.
