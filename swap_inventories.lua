@@ -204,7 +204,17 @@ end
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_bot(entity, rsl_definition)
-    --local result = math.random() < 0.5 and "iron-plate" or "copper-plate"
+    local stack = entity.get_inventory(1)[1]
+    if stack.valid_for_read then
+        local result = select_result(rsl_definition)
+        swap_funcs.set_or_nil_stack(stack, result)
+    end
+end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
+function swap_funcs.hotswap_in_cargo_pod(entity, rsl_definition)
     local stack = entity.get_inventory(1)[1]
     if stack.valid_for_read then
         local result = select_result(rsl_definition)
