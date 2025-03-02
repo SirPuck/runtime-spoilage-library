@@ -20,21 +20,11 @@ All these things are possible.
 
 I included two switches : "placeholder_spoil_into_self" in the data_registry module, and "enable_swap_in_assembler" in the swap_inventories module. They are both set to false by default.
 
-For assembling machines, and furnaces, for instance, it's impossible to insert "any item I want" at runtime. Meaning... if you try to use RSL on an item that's inside an assembling machine,
-the mod will simply delete it, if the switch enable_swap_in_assembler is TRUE, because it cannot insert another item in its place if it's not part of the recipe currently setup on the machine. 
-If you let the "enable_swap_in_assembler" to its default value, which is false, your item, while spoiling into an assembling machine, will turn
-into the "fallback_spoilage" you have defined at data stage on the register_spoilable_item function. This is up to you to chose wether your item should be delted when it fails to be replaced by RSL or if it should be turned into a fallback item.
+If you add a spoilable ore, you will either need to set placeholder_spoil_into_self to true, or define a fallback for your ore item.
 
-Of course, I think there are ways to circumvent this, like rapidly switching the machine's current recipe,
-or including all the possible spoils into the recipe with an amount of 0,
-but I wanted this mod to be as lightweight as possible and NOT tinker with things like assembling machines that may or may not have been heavily tinkered with by another mod.
-You can change this behavior by switching the variable "placeholder_spoil_into_self" accessible through data_registry -> if the script fails for any reason, your custom item will turn into a placeholder and spoil into the placeholder every 2 seconds. I advise you use this ONLY for debugging purposes. Prefer the other solutions :
+Adding a "fallback_spoilage" allows the game to still spoil the item into another item even if RSL cannot access the target inventory (if the inventory is an internal buffer, like for mining drills for instance).
+If you do that, and in the case where RSL can't access the inventory, the script won't delete the placeholder, and the placeholder will turn into the fallback result you defined. I suggest you just use "spoilage" for this fallback, but you can use whatever you want, like "scrap", or "sand" or whatever.
 
-Adding a "fallback_spoilage" when you register your item at data stage, and let the assembling machine switch off is the prefered behavior.
-If you do that, the script won't delete the placeholder, and the placeholder will turn into the fallback result you defined. I suggest you just use "spoilage" for this fallback, but you can use whatever you want, like "scrap", or "sand" or whatever.
-If you put this to true, then, the placeholder that replaces your item when it spoils "naturally" will spoil into itself, meaning that resources "stuck" in an assembling machine will never disappear.
-At this point you may be asking yourself "what ? you just told me you could not insert any item you wanted into an assembling machine !" and yeah, that's true, however, the placeholder is the "spoil_result" of your custom item.
-And the "spoil_result" is the item that the engine replaces your original item with. It's just how it works. Any spoil result defined at data stage just works, because it's the result of the TRUE VANILLA spoilage mechanic.
 
 ---------
 How do use RSL in your mods :
