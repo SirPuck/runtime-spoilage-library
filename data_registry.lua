@@ -4,12 +4,15 @@ local placeholder_spoil_into_self = false
 --- !!! README !!! \
 --- When you want to control the behavior of a spoiling item at runtime, you need a placeholder intermediary.
 --- When your item spoils, it is replaced by the placeholder that is then targeted by the runtime script.\
---- However, some things cannot have their inventory written into arbitrarly (like assembling machines).
+--- However, some things cannot have their inventory written into arbitrarly or use internal buffers that aren't accessible.
 --- If placeholder_spoil_into_self is set to false, the placeholder will disappear after 2 seconds of life. \
---- it will be like your item just fanished on spoil if for any reason, the script wasn't able to replace it properly.\
+--- it will be like your item just vanished on spoil if for any reason, the script wasn't able to replace it properly.\
 --- If it is set to true, then the placeholder will spoil into itself and await for a valid state where it can be replaced. \
 --- I would advise to let this at false because having a LOT of placeholders accumulate somewhere they cannot spoil will hinder
 --- performance by triggering a remplacement attempt every 2 seconds.
+--- HOWEVER : if you add a new ore, or make an ore spoilable, you need to either set placeholder_spoil_into_self to true,
+--- or define a fallback in your ore item, because mining_drills have an internal buffer where the item is, and it cannot
+--- be accessed through the API for now.
 --- Use it for debugging only (to see where items are stuck and cannot be replaced).
 ---@param value boolean
 function registry.set_placeholder_spoil_into_self(value)
@@ -77,6 +80,9 @@ function registry.register_spoilable_item(item, items_per_trigger, fallback_spoi
     if not placeholder_spoil_into_self then
         placeholder.spoil_result = fallback_spoilage or nil
         placeholder.spoil_to_trigger_result = nil
+    else
+        placeholder.spoil_result = placeholder.name
+        placeholder.spoil_to_trigger_result = item.spoil_to_trigger_result
     end
 
     data:extend{item, placeholder}

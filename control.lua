@@ -28,6 +28,10 @@ local generic_source_handler = {
     ["cargo-landing-pad"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition) end,
     ["item-entity"] = function(entity, rsl_definition) return swap_funcs.hotswap_on_ground(entity, rsl_definition) end,
     ["furnace"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_furnace(entity, rsl_definition) end,
+    ["mining-drill"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_mining_drill(entity, rsl_definition) end,
+    ["boiler"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition) end,
+    ["lab"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_lab_inventory(entity, rsl_definition) end,
+    ["cargo-pod"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_cargo_pod(entity, rsl_definition) end,
 }
 
 local defined_inventories = {
