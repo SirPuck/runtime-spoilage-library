@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.2
+Date: 02. 03. 2025
+  Bugfixes:
+    - Solve multiple crashes :
+    - Add support for cargo pods
+    - Add support for assembling machines
+    - Add support for boilers
+    - Add support for labs and implement a fix for factorio's 2.0.38 version
+    - Solve a crash with the mining drills, but only add limited support. If you use RSL to add spoilable ores, you need to define a fallback for your ore or set placeholder_spoil_into_self to true
+---------------------------------------------------------------------------------------------------
 Version: 0.1.1
 Date: 13. 02. 2025
   Bugfixes:
