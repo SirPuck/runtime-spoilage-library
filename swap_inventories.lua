@@ -213,38 +213,27 @@ function swap_funcs.hotswap_in_bot(entity, rsl_definition)
 end
 
 
-
-
-
-
--- /!\ ATTENTION /!\ Cannot write arbitrary items into the output nor dump stacks of the assembling machine.
--- Tried both remove/insert and set stack. Only the results of the recipe are allowed.
--- Since this mod's goal is to control the spoil results at runtime, it would make
--- no sense to integrate these results in the recipes, unless you really want to.
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_machine(entity, rsl_definition)
-    if enable_swap_in_assembler == false then
-        return
-    end
     local placeholder_name = rsl_definition.name
     local input = entity.get_inventory(defines.inventory.assembling_machine_input)
     local output = entity.get_inventory(defines.inventory.assembling_machine_output)
     local dump = entity.get_inventory(defines.inventory.assembling_machine_dump)
---    local trash = entity.get_inventory(8)
-    local inventories = {input, output, dump}
+    local trash = entity.get_inventory(defines.inventory.assembling_machine_trash)
+    local inventories = {input, output, dump, trash}
     for _, inventory in pairs(inventories) do
         for _, quality in pairs(qualities) do
             local item_count = inventory.get_item_count({name=placeholder_name, quality=quality})
             if item_count > 0 then
-                for i = 1, #inventory do
-                    local stack = inventory[i]
-                    if stack.valid_for_read and stack.name == placeholder_name then
-                        local result = select_result(rsl_definition)
-                        swap_funcs.set_or_nil_stack(stack, result)
-                        --stack.set_stack({name=result, count=item_count})
+                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                if removed > 0 then
+                    local result = select_result(rsl_definition)
+                    if result ~= nil and trash ~= nil then
+                        trash.insert({name=result, count=removed, quality=quality})
                     end
+                    return
                 end
             end
         end
@@ -258,7 +247,6 @@ end
 function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, inventory_definition)
     local placeholder_name = rsl_definition.name
     local inventory = entity.get_inventory(inventory_definition)
-    local result = select_result(rsl_definition)
     if inventory then
         for _, quality in pairs(qualities) do
             removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
@@ -273,6 +261,65 @@ function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, invento
     end
 end
 
+--- If the output is full, the spoiling item will just be deleted
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
+function swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition)
+    local placeholder_name = rsl_definition.name
+    local input_inventory = entity.get_inventory(defines.inventory.fuel)
+    local output_inventory = entity.get_inventory(defines.inventory.burnt_result)
+    for _, inventory in pairs({input_inventory, output_inventory}) do
+        if inventory then
+            for _, quality in pairs(qualities) do
+                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                if removed > 0 then
+                    local result = select_result(rsl_definition)
+                    if result ~= nil then
+                        inventory.insert({name=result, count=removed, quality=quality})
+                    end
+                    return
+                end
+            end
+        end
+    end
+end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
+function swap_funcs.hotswap_in_lab_inventory(entity, rsl_definition)
+    local placeholder_name = rsl_definition.name
+    --local inventory = entity.get_inventory(defines.inventory.lab_input)
+    local trash_inventory = entity.get_inventory(defines.inventory.assembling_machine_trash)
+    -- Currently, trash_inventory_size does nothing for labs so there is only one slot available. Excess spoiled items will be deleted. 
+    if trash_inventory then
+        for _, quality in pairs(qualities) do
+            removed = trash_inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+            if removed > 0 then
+                local result = select_result(rsl_definition)
+                if result ~= nil then
+                    trash_inventory.insert({name=result, count=removed, quality=quality})
+                end
+                return
+            end
+        end
+    end
+end
+
+--- Mining drills do not have an inventory, they have an internal buffer that is not accessible
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
+function swap_funcs.hotswap_in_mining_drill(entity, rsl_definition)
+    -- The current behavior of mining drills don't allow runtime item replacement. So, if the modder
+    -- wants to add a spoilable ore, either a fallback is needed for this item, either placeholder_spoil_into_self
+    -- must be set to true
+    --local placeholder_name = rsl_definition.name
+    --local inventory = "..."
+    return end  
+
+
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
@@ -281,7 +328,6 @@ function swap_funcs.hotswap_in_furnace(entity, rsl_definition)
     local inventory_result = entity.get_inventory(defines.inventory.furnace_result)
     local inventory_input = entity.get_inventory(defines.inventory.furnace_source)
     local inventories = {inventory_input, inventory_result}
-    local result = select_result(rsl_definition)
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do
@@ -304,7 +350,6 @@ end
 function swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition)
     local placeholder_name = rsl_definition.name
     local inventories = {entity.get_inventory(defines.inventory.chest), entity.get_inventory(defines.inventory.logistic_container_trash)}
-    local result = select_result(rsl_definition)
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do
