@@ -233,7 +233,10 @@ function swap_funcs.hotswap_in_machine(entity, rsl_definition)
     local dump = entity.get_inventory(defines.inventory.assembling_machine_dump)
     local trash = entity.get_inventory(defines.inventory.assembling_machine_trash)
     local modules = entity.get_inventory(defines.inventory.assembling_machine_modules)
-    local inventories = {input, output, dump, trash, modules}
+    local inventories = {input, output, dump, trash}
+    if modules then
+        table.insert(inventories, modules)
+    end
     for _, inventory in pairs(inventories) do
         for _, quality in pairs(qualities) do
             local item_count = inventory.get_item_count({name=placeholder_name, quality=quality})
@@ -272,25 +275,6 @@ function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, invento
     end
 end
 
---- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
---- @return nil
-function swap_funcs.hotswap_in_beacon(entity, rsl_definition)
-    local placeholder_name = rsl_definition.name
-    local inventory = entity.get_inventory(defines.inventory.beacon_modules)
-    if inventory then
-        for _, quality in pairs(qualities) do
-            removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
-            if removed > 0 then
-                local result = select_result(rsl_definition)
-                if result ~= nil then
-                    inventory.insert({name=result, count=removed, quality=quality})
-                end
-                return
-            end
-        end
-    end
-end
 
 --- If the output is full, the spoiling item will just be deleted
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
@@ -359,7 +343,12 @@ function swap_funcs.hotswap_in_furnace(entity, rsl_definition)
     local inventory_result = entity.get_inventory(defines.inventory.furnace_result)
     local inventory_input = entity.get_inventory(defines.inventory.furnace_source)
     local modules = entity.get_inventory(defines.inventory.furnace_modules)
-    local inventories = {inventory_input, inventory_result, modules}
+    local inventories = {inventory_input, inventory_result}
+
+    if modules then
+        table.insert(inventories, modules)
+    end
+
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do

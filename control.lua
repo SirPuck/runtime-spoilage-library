@@ -32,7 +32,6 @@ local generic_source_handler = {
     ["boiler"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition) end,
     ["lab"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_lab_inventory(entity, rsl_definition) end,
     ["cargo-pod"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_cargo_pod(entity, rsl_definition) end,
-    ["beacon"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_beacon(entity, rsl_definition) end,
 }
 
 local defined_inventories = {
@@ -41,6 +40,8 @@ local defined_inventories = {
     ["container"] = defines.inventory.chest,
     ["space-platform-hub"] = defines.inventory.hub_main,
     ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
+    ["locomotive"] = defines.inventory.fuel,
+    ["beacon"] = defines.inventory.beacon_modules
 }
 
 
@@ -95,7 +96,21 @@ local function swap_item(event, placeholder)
     end
 end
 
+local current_event = {id = "", tick = nil, unit_number = nil}
+
 local function on_spoil(event)
+
+    if event.effect_id == current_event.id
+        and event.tick == current_event.tick
+        and event.source_entity.unit_number == current_event.unit_number
+            then
+                return
+    else
+        current_event.id = event.effect_id
+        current_event.tick = event.tick
+        current_event.unit_number = event.source_entity.unit_number
+    end
+
     if event.effect_id then
         local prefix, suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
 
