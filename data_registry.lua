@@ -25,7 +25,8 @@ end
 
 local placeholder_model = {
     type = "item",
-    icon = "__base__/graphics/icons/production-science-pack.png",
+    --icon = "__base__/graphics/icons/production-science-pack.png",
+    icon = "__base__/graphics/icons/signal/signal-question-mark.png",
     subgroup = "raw-material",
     stack_size = 10,
     spoil_ticks = 120,

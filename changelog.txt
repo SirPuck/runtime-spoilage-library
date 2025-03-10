@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.0
+Date: 10. 03. 2025
+  Major Features:
+    - Dramatically improve performance (time usage reduced by about half).
+  Changes:
+    - Use the question mark signal icon for the placeholders.
+    - Change some swap functions slightly to prevent potential crashes.
+---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 10. 03. 2025
   Bugfixes:
