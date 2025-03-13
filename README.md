@@ -138,17 +138,20 @@ local function call_remote()
 )
 end
 
-script.on_load(
+script.on_load(function()
     call_remote()
+end
 )
 
 
-script.on_init(
+script.on_init(function()
     call_remote()
+end
 )
 
-script.on_configuration_changed(
+script.on_configuration_changed(function()
     call_remote()
+end
 )
 ```
 
@@ -189,17 +192,20 @@ local function call_remote()
 end
 
 
-script.on_load(
+script.on_load(function()
     call_remote()
+end
 )
 
 
-script.on_init(
+script.on_init(function()
     call_remote()
+end
 )
 
-script.on_configuration_changed(
+script.on_configuration_changed(function()
     call_remote()
+end
 )
 
 ```
