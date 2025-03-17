@@ -260,18 +260,24 @@ end
 --- @return nil
 function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, inventory_definition)
     local placeholder_name = rsl_definition.name
-    local inventory = entity.get_inventory(inventory_definition)
-    if inventory then
-        for _, quality in pairs(qualities) do
-            removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
-            if removed > 0 then
-                local result = select_result(rsl_definition)
-                if result ~= nil then
-                    inventory.insert({name=result, count=removed, quality=quality})
+    if inventory_definition then
+        local inventory = entity.get_inventory(inventory_definition)
+        if inventory then
+            for _, quality in pairs(qualities) do
+                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                if removed > 0 then
+                    local result = select_result(rsl_definition)
+                    if result ~= nil then
+                        inventory.insert({name=result, count=removed, quality=quality})
+                    end
+                    return
                 end
-                return
             end
         end
+    else
+        game.print("PLEASE REPORT TO RSL AUTHOR : Unhandled inventory type for")
+        game.print(entity.type)
+        return
     end
 end
 
@@ -386,6 +392,73 @@ function swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition)
         end
     end
 end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
+function swap_funcs.hotswap_in_roboport(entity, rsl_definition)
+    local placeholder_name = rsl_definition.name
+    local inventories = {entity.get_inventory(defines.inventory.roboport_robot), entity.get_inventory(defines.inventory.roboport_material)}
+    for _, inventory in pairs(inventories) do
+        if inventory then
+            for _, quality in pairs(qualities) do
+                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                if removed > 0 then
+                    local result = select_result(rsl_definition)
+                    if result ~= nil then
+                        inventory.insert({name=result, count=removed, quality=quality})
+                    end
+                    return
+                end
+            end
+        end
+    end
+end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
+function swap_funcs.hotswap_in_agricultural_tower(entity, rsl_definition)
+    local placeholder_name = rsl_definition.name
+    local inventories = {entity.get_inventory(defines.inventory.assembling_machine_input), entity.get_inventory(defines.inventory.assembling_machine_output)}
+    for _, inventory in pairs(inventories) do
+        if inventory then
+            for _, quality in pairs(qualities) do
+                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                if removed > 0 then
+                    local result = select_result(rsl_definition)
+                    if result ~= nil then
+                        inventory.insert({name=result, count=removed, quality=quality})
+                    end
+                    return
+                end
+            end
+        end
+    end
+end
+
+--- @param entity LuaEntity (we assume source_entity and target_entity are the same).
+--- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @return nil
+function swap_funcs.hotswap_in_spider(entity, rsl_definition)
+    local placeholder_name = rsl_definition.name
+    local inventories = {entity.get_inventory(defines.inventory.spider_ammo), entity.get_inventory(defines.inventory.spider_trash), entity.get_inventory(defines.inventory.spider_trunk)}
+    for _, inventory in pairs(inventories) do
+        if inventory then
+            for _, quality in pairs(qualities) do
+                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                if removed > 0 then
+                    local result = select_result(rsl_definition)
+                    if result ~= nil then
+                        inventory.insert({name=result, count=removed, quality=quality})
+                    end
+                    return
+                end
+            end
+        end
+    end
+end
+
 
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
