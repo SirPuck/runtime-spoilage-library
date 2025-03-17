@@ -420,7 +420,7 @@ end
 --- @return nil
 function swap_funcs.hotswap_in_agricultural_tower(entity, rsl_definition)
     local placeholder_name = rsl_definition.name
-    local inventories = {entity.get_inventory(1), entity.get_inventory(2)}
+    local inventories = {entity.get_inventory(defines.inventory.assembling_machine_input), entity.get_inventory(defines.inventory.assembling_machine_output)}
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do
