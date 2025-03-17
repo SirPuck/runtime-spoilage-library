@@ -32,6 +32,9 @@ local generic_source_handler = {
     ["boiler"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition) end,
     ["lab"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_lab_inventory(entity, rsl_definition) end,
     ["cargo-pod"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_cargo_pod(entity, rsl_definition) end,
+    ["roboport"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_roboport(entity, rsl_definition) end,
+    ["agricultural-tower"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_agricultural_tower(entity, rsl_definition) end,
+    ["spider-vehicle"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_spider(entity, rsl_definition) end,
 }
 
 local defined_inventories = {
@@ -41,7 +44,10 @@ local defined_inventories = {
     ["space-platform-hub"] = defines.inventory.hub_main,
     ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
     ["locomotive"] = defines.inventory.fuel,
-    ["beacon"] = defines.inventory.beacon_modules
+    ["beacon"] = defines.inventory.beacon_modules,
+    ["asteroid-collector"] = 1,
+    ["reactor"] = defines.inventory.fuel,
+    ["fusion-reactor"] = defines.inventory.fuel,
 }
 
 
@@ -98,8 +104,7 @@ end
 
 local current_event = {id = "", tick = nil, unit_number = nil}
 
-local function on_spoil(event)
-
+local function on_spoil(event)    
     if event.source_entity ~= nil then
         if event.effect_id == current_event.id
             and event.tick == current_event.tick
