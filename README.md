@@ -52,19 +52,23 @@ In your control.lua, you will need to make a remote call to RSL and pass it your
 ---@field remote_mod string The name of the mod exposing the function.
 ---@field remote_function string The name of the function to call.
 
+--- Represents a possible result item with an optional weight.
+---@class RslWeightedItem
+---@field name string The name of the result item.
+---@field weight? number The weight for weighted selection (optional).
+
 --- Arguments for registering an RSL definition.
 ---@class RslArgs
 ---@field mode ModeType The mode settings for result selection.
----@field condition nil|boolean|RemoteCall The condition can be true, false, or a remote call structure.
----@field possible_results table<boolean, {name: string, weight?: number}[]> The possible outcomes based on condition results.
+---@field condition? RemoteCall The remote call used if the mode is conditional. If it's not conditional, it'll just use `true`.
+---@field possible_results table<any, RslWeightedItem[]> The possible outcomes based on condition results.
 local args_model = {
     mode = {random = false, conditional = false, weighted = false},
     condition = nil,
     possible_results = {
         [true] = {
             {name = "", weight = 1}
-        },
-        [false] = {}
+        }
     }
 }
 ```
@@ -95,11 +99,11 @@ local mutation_a = {
     spoil_ticks = 200,
 }
 ---Params :
-1) item
-2) number of items needed to trigger a runtime spoilage replacement / script effect
-3) placeholder fallback spoiling result (used in case the script cannot replace the item at runtime. If you don't set anything, the item will just be deleted like if it spoiled into nothing if this happens. For instance, unless you are an advanced user and know how you can handle furnaces and assembling machines, you better set something here like "spoilage")
-4) trigger (optional) you may add another triggered effect
- 
+--1) item
+--2) (optional) number of items needed to trigger a runtime spoilage replacement / script effect. Defaults to `1`
+--3) (optional) placeholder fallback spoiling result (used in case the script cannot replace the item at runtime. If you don't set anything, the item will just be deleted like if it spoiled into nothing if this happens. For instance, unless you are an advanced user and know how you can handle furnaces and assembling machines, you better set something here like "spoilage")
+--4) (optional) trigger -- you may add another triggered effect
+
 rsl.register_spoilable_item(mutation_a, 1)
 
 ```
@@ -123,7 +127,7 @@ local effect =
 ```
 
 In your control.lua :
-Simple exemple : 
+Simple example : 
 ```lua
 
 local function call_remote()
@@ -138,74 +142,66 @@ local function call_remote()
 )
 end
 
-script.on_load(function()
-    call_remote()
-end
-)
-
 
 script.on_init(function()
     call_remote()
-end
-)
+end)
 
 script.on_configuration_changed(function()
     call_remote()
-end
-)
+end)
 ```
 
 
 
 Advanced :
 ```lua
---- Optional : A function of yours to check if a condition is true for your item to spoil.
-local function check_if_evening(event)
-    local surface = event.source_entity.surface
-    return surface.dusk < surface.daytime and surface.daytime < surface.dawn
-end
-
+-- If you want fallback behaviour, you'll have to implement it yourself
+---@enum (key) surfaces
+local valid_surfaces = {
+	nauvis = true,
+	vulcanus = true,
+	fallback = true, -- Technically not intentionally valid, but if it hits anyways, why replace it with itself?
+}
 
 --- If you use a function like the one writte above, you will need to provide a remote interface to RSL
 remote.add_interface("your-mod-name", {
-    --- Custom condition function to check if it's evening
-    --- @return boolean
-    is_evening = function(event)
-        local surface = event.source_entity.surface
-        return surface.dusk < surface.daytime and surface.daytime < surface.dawn
-    end
+	--- Custom condition to select the results based on the surface name
+	--- @param event EventData.on_script_trigger_effect
+	--- @return surfaces
+	get_surface = function (event)
+		local surface = event.source_entity.surface.name
+		if valid_surfaces[surface] then
+			return surface
+		else
+			return "fallback"
+		end
+	end
 })
 
 local function call_remote()
-    remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
-    mode = { random = true, conditional = true, weighted = false },
-    condition = {
-            remote_mod = "your-mod-name",      -- Your mod name here
-            remote_function = "is_evening",         -- The function name to call
-        },  -- Example condition
-    possible_results = {
-        [true] = {{ name = "iron-plate"}, { name = "copper-plate"}},
-        [false] = {{ name = "copper-plate"}}
-        }
-    }
-)
+	remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
+		mode = { random = false, conditional = true, weighted = false },
+		condition = {
+			remote_mod = "your-mod-name",      -- Your mod name here
+			remote_function = "get_surface",         -- The function name to call
+		},  -- Example condition
+		possible_results = {
+			nauvis = {{ name = "iron-plate"}},
+			vulcanus = {{ name = "copper-plate"}},
+			fallback = {{ name = "steel-plate"}},
+		}--[[@as table<surfaces,RslItems>]] -- To help warn you if you add unecessary results.
+	})
 end
 
-
-script.on_load(function()
-    call_remote()
-end
-)
 
 
 script.on_init(function()
-    call_remote()
-end
-)
+	call_remote()
+end)
 
 script.on_configuration_changed(function()
-    call_remote()
-end
-)
+	call_remote()
+end)
 
 ```

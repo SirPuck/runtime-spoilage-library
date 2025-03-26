@@ -1,13 +1,17 @@
 local runtime_registry = require("runtime_registry")
 local swap_funcs = require("swap_inventories")
 local registry = runtime_registry.registry
-local rsl_definitions = registry.rsl_definitions
+
+local rsl_definitions = storage.rsl_definitions
+--- Note, that does not actually work because storage will
+--- not have been set up by the point this runs. It's purely symbolic
 
 remote.add_interface("rsl_registry", {
     register_rsl_definition = registry.register_rsl_definition
 })
 
 
+---@type table<string,fun(entity:LuaEntity,rsl_definition:RslDefinition)>
 local generic_source_handler = {
     ["inserter"] = swap_funcs.hotswap_in_inserter,
     ["logistic-robot"] = swap_funcs.hotswap_in_bot,
@@ -31,6 +35,7 @@ local generic_source_handler = {
     ["spider-vehicle"] = swap_funcs.hotswap_in_spider,
 }
 
+---@type table<string,defines.inventory>
 local defined_inventories = {
     ["car"] = defines.inventory.car_trunk,
     ["cargo-wagon"] = defines.inventory.cargo_wagon,
@@ -39,7 +44,7 @@ local defined_inventories = {
     ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
     ["locomotive"] = defines.inventory.fuel,
     ["beacon"] = defines.inventory.beacon_modules,
-    ["asteroid-collector"] = 1,
+    ["asteroid-collector"] = defines.inventory.chest, -- Currently does not exist? Just using chest for the warning
     ["reactor"] = defines.inventory.fuel,
     ["fusion-reactor"] = defines.inventory.fuel,
 }
@@ -59,6 +64,9 @@ end
 ---@type table<string, boolean|{prefix:string, suffix:string}>
 local cached_event_ids = {}
 
+---@param effect_id string
+---@return string?
+---@return string?
 local function get_suffix_and_prefix_from_effect_id(effect_id)
     local cached_value =  cached_event_ids[effect_id]
     if cached_value == false then
@@ -68,8 +76,10 @@ local function get_suffix_and_prefix_from_effect_id(effect_id)
         local prefix, suffix = split_suffix_and_prefix(effect_id)
 
         if prefix ~= nil and suffix ~= nil then
-            cached_event_ids[effect_id] = {prefix = prefix, suffix = suffix}
+            ---@cast prefix string
+            ---@cast suffix string
             cached_value = {prefix = prefix, suffix = suffix}
+            cached_event_ids[effect_id] = cached_value
         else
             cached_event_ids[effect_id] = false
             return nil, nil
@@ -81,6 +91,8 @@ local function get_suffix_and_prefix_from_effect_id(effect_id)
 
 end
 
+---@param event EventData.on_script_trigger_effect
+---@param placeholder string
 local function swap_item(event, placeholder)
     local rsl_definition = rsl_definitions[placeholder]
     rsl_definition.event = event
@@ -98,25 +110,45 @@ end
 
 local current_event = {id = "", tick = nil, unit_number = nil}
 
+
 local function on_spoil(event)    
 
-    if event.effect_id then
-        local prefix, suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
+    local prefix, suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
 
-        if prefix == nil or suffix == nil then
-            return
-        end
+    if prefix == nil or suffix == nil then
+        return
+    end
 
-        if prefix == "rsl_" then
-            swap_item(event, suffix)
-        end
+    if prefix == "rsl_" then
+        swap_item(event, suffix)
     end
 end
 
 
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
+---@class RslStorage
+---@field rsl_definitions table<string,RslDefinition>
+storage = storage
 
---script.on_init(function()end)
+---Will set up the storage for after init or configuration changed.
+---Clears the registry because if the mods change or a startup setting changed
+---The registry is likely to not be valid anymore, so just force everyone to re-register
+---
+---This is similar to what was already being done, but ***NOT ABUSING ON_LOAD!***
+---`on_load` has a very limit use case. Setting things up in it is not one of them!
+---
+---This also means that mods *have* to require us as a dependency instead of just ignoring that entirely.
+---Because if they run their configuration changed before ours, we'll just clear their registrations.
+local function setup_storage()
+    rsl_definitions = {}
+    storage.rsl_definitions = rsl_definitions
+end
+--- THIS is how you use on_load
+--- to restore references to objects in storage
+script.on_load(function ()
+    rsl_definitions = storage.rsl_definitions
+end)
 
---script.on_configuration_changed(function(event)end)
+script.on_init(setup_storage)
+script.on_configuration_changed(setup_storage)
