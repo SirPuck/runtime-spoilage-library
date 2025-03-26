@@ -14,7 +14,7 @@ local selection_funcs = require("selection")
 --- Arguments for registering an RSL definition.
 ---@class RslArgs
 ---@field mode ModeType The mode settings for result selection.
----@field condition nil|boolean|RemoteCall The condition can be true, false, or a remote call structure.
+---@field condition? RemoteCall The remote call used if the mode is conditional. If it's not conditional, it'll just use `true`.
 ---@field possible_results table<boolean, RslWeightedItem[]> The possible outcomes based on condition results.
 local args_model = {
     mode = {random = false, conditional = false, weighted = false},
@@ -38,6 +38,7 @@ local function preprocess_weights(possible_results)
 
     -- Build sorted list of cumulative weights
     for _, option in pairs(possible_results) do
+        if not option.weight then error("Chose to weight the random results, but results did not have weights", 3) end
         cumulative_weight = cumulative_weight + option.weight--[[@as number]]
         table.insert(sorted_options, { weight = cumulative_weight, name = option.name})
     end
@@ -51,6 +52,49 @@ local function preprocess_weights(possible_results)
     return sorted_options
 end
 
+--- Do not allow a possible_results table to accept table indexes
+--- We want them *accessible*. Maybe *you* can pass a table around as an index
+--- but I do not trust the remote interface to keep the references the same across different passes
+---@type table<type,true>
+local index_by_value_types = {
+    ["boolean"] = true,
+    ["number"] = true,
+    ["string"] = true,
+}
+
+---@param result RslWeightedItem
+local function validate_result(result)
+    if type(result) ~= "table" then
+        error("Expected a result item table. Got a '"..type(result).."' instead", 3)
+    elseif type(result.name) ~= "string" then
+        error("Expected a string for the name of the result item. Got a '"..type(result.name).."' instead", 3)
+    elseif result.weight ~= nil and type(result.weight) ~= "number" then
+        error("Expected a number for the weight of the result item. Got a '"..type(result.weight).."' instead", 3)
+    end
+
+    local prototype = prototypes.item[result.name]
+    if not prototype then
+        error("The given item name, did not exist: "..result.name, 3)
+    end
+end
+
+--- Validates the given remote call parameters
+---@param remote_call RemoteCall
+local function validate_remote_call(remote_call)
+    if type(remote_call.remote_function) ~= "string" then
+        error("Expected a string for the remote_function field. Got a '"..type(remote_call.remote_function).."' instead", 3)
+    elseif type(remote_call.remote_mod) ~= "string" then
+        error("Expected a string for the remote_mod field. Got a '"..type(remote_call.remote_mod).."' instead", 3)
+    end
+
+    local interface = remote.interfaces[remote_call.remote_mod]
+    if not interface then
+        error("Remote call's interface did not exist.", 3)
+    elseif not interface[remote_call.remote_function] then
+        error("Remote call's function did not exist in given interface.", 3)
+    end
+end
+
 ---@type table<string,RslDefinition>
 registry.rsl_definitions = registry.rsl_definitions or {}
 ---Register a new RSL definition remotely.
@@ -58,47 +102,66 @@ registry.rsl_definitions = registry.rsl_definitions or {}
 ---@param args RslArgs The arguments for the RSL definition.
 function registry.register_rsl_definition(item_name, args)
     local placeholder_name = item_name .. "-rsl-placeholder"
-    local rsl_definition =  {
-            name = placeholder_name,
-            possible_results = {
-                [true] = {},
-                [false] = {}
-            },
-            event = nil
-        }
 
-    --- Build the outcomes
-    if args.mode.random == false then
-        rsl_definition.condition = args.condition
-        rsl_definition.possible_results[true] = args.possible_results[true]
-        rsl_definition.possible_results[false] = args.possible_results[true]
-        rsl_definition.selection_mode = function(x) return x[1].name end
-        registry.rsl_definitions[placeholder_name] = rsl_definition
-        return
+    --- Complain about inane mode combinations
+    if args.mode.random == false and args.mode.weighted then
+        error("Random was set to false, and weighted true.. These are conflicting options.", 2)
     end
-    if args.mode.random then
-        rsl_definition.possible_results[true] = args.possible_results[true]
-        rsl_definition.possible_results[false] = args.possible_results[false] or {}
+
+    -- Process the given results to make sure they are not malformed
+    local possible_results = args.possible_results
+    for key, results in pairs(possible_results) do
+        if not index_by_value_types[type(key)] then
+            error("The key to some of the possible results are impossible to re-index by. Prove your case if you disagree about '"..type(key).."' being unusable", 2)
+        end
+        for _, result in pairs(results) do
+            validate_result(result)
+        end
     end
-    if args.mode.weighted then
-        rsl_definition.selection_mode = function(x) return selection_funcs.weighted_choice(x) end
-        rsl_definition.possible_results[true] =  preprocess_weights(args.possible_results[true])
-        if args.possible_results[false] ~= nil then
-            rsl_definition.possible_results[false] = preprocess_weights(args.possible_results[false])
+
+    --- Selection mode selection
+    --- Also react to the mode by affecting results if need be
+    ---@type RslSelectionMode
+    local selection_mode
+    if not args.mode.random then
+        selection_mode = selection_funcs.nonrandom
+    elseif args.mode.weighted then
+        selection_mode = selection_funcs.weighted_choice
+        -- Preprocess all the results to allow for the weighted choice function to work properly
+        for key, results in pairs(possible_results) do
+            possible_results[key] = preprocess_weights(results)
         end
     else
-        rsl_definition.selection_mode = function(x) return selection_funcs.select_one_result_over_n_unweighted(x) end
+        selection_mode = selection_funcs.select_one_result_over_n_unweighted
     end
+
+    --- Condition evaluation
+    ---@type RemoteCall|true?
+    local condition = args.condition
     if args.mode.conditional then
-        rsl_definition.condition = args.condition
+        if type(condition) ~= "table" then
+            error("Set to conditional, and didn't provide a remote call.", 2)
+        end
+
+        validate_remote_call(condition)
     else
-        rsl_definition.condition = true
+        condition = true
+        --- Limit possible results to `true` since the condition will always be true
+        possible_results = {
+            [true] = possible_results[true]
+        }
     end
-    registry.rsl_definitions[placeholder_name] = rsl_definition
-    return
+
+    registry.rsl_definitions[placeholder_name] = {
+        name = placeholder_name,
+        possible_results = possible_results,
+        event = nil,
+        condition = condition,
+        selection_mode = selection_mode
+    }
 end
 
-
+--FIXME: This example is out of date
 local registered_rsl_def_exemple = {
     ["iron-plate-rsl-placeholder"] = 
         {

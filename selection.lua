@@ -33,4 +33,9 @@ function selection_funcs.select_one_result_over_n_unweighted(possible_outcomes)
     return possible_outcomes[math.random(1, #possible_outcomes)].name
 end
 
+---Just blindly choose the name of the first result
+function selection_funcs.nonrandom(possible_results)
+    return possible_results[1].name
+end
+
 return selection_funcs
