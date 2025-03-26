@@ -1,7 +1,9 @@
+local select_result = require("selection")
 local swap_funcs = {}
 
 local enable_swap_in_assembler = false
 
+---@type QualityID[]
 local qualities = {}
 local _quality = prototypes.quality.normal
 while _quality do
@@ -19,7 +21,7 @@ remote.add_interface("rsl_library", {
         --{type = "item", name = "your-spoilable-item", amount = 1},
         --  {type = "item", name = "steel-plate", amount = 0}, --one possible rsl outcome
         --  {type = "item", name = "copper-plate", amount = 0}, --another possible rsl outcome
-      --},
+        --},
     ---@param state boolean Whether to enable (true) or disable (false) the feature.
     set_swap_in_assembler_BROKEN = function(state)
         if type(state) ~= "boolean" then
@@ -35,40 +37,19 @@ remote.add_interface("rsl_library", {
     end
 })
 
---- Represents a possible result item with an optional weight.
----@class RslResultItem
----@field name string The name of the result item.
----@field cumulative_weight? number The weight for weighted selection (optional).
-
---- Represents the selection mode function.
----@alias RslSelectionMode fun(item: table): any
+---@class RslItems : {[number]:RslWeightedItem}
+---@class RslWeightedItems : RslItems
+---@field cumulative_weight number
 
 --- Represents the structure of an RSL definition.
 ---@class RslDefinition
----@field selection_mode? RslSelectionMode Function to determine selection logic.
+---@field selection_mode RslSelectionMode Function to determine selection logic.
 ---@field name string The unique name of the RSL definition.
----@field condition boolean|fun():boolean Condition to trigger the RSL result; can be a boolean or a function.
----@field possible_results table<boolean, RslResultItem[]> A table mapping outcomes (true/false) to lists of result items.
+---@field condition true|RemoteCall Condition to trigger the RSL result; can be a boolean or a function.
+---@field possible_results table<any, RslItems|RslWeightedItems?> A table mapping outcomes (true/false) to lists of result items.
+---@field event? EventData.on_script_trigger_effect Just for smuggling the event to the remote function
 
 
--- Inventory swapping functions
-------------------------
-local function select_result(rsl_definition)
-    if rsl_definition.condition == true then
-        return rsl_definition.selection_mode(rsl_definition.possible_results[true])
-    end
-    local event = rsl_definition.event
-    if type(rsl_definition.condition) == "table" then
-        local result, success = pcall(remote.call, rsl_definition.condition.remote_mod, rsl_definition.condition.remote_function, event)
-        local options_list = rsl_definition.possible_results[success]
-        return rsl_definition.selection_mode(options_list)
-    end
-
-    --local options_list = rsl_definition.possible_results[success]
-    --return rsl_definition.selection_mode(options_list)
-end
-
----comment
 ---@param stack LuaItemStack
 ---@param result string|nil
 function swap_funcs.set_or_nil_stack(stack, result)
@@ -84,7 +65,7 @@ end
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition)
-    local inventory = entity.get_main_inventory(defines.inventory.character_main)
+    local inventory = entity.get_main_inventory()
     local placeholder_name = rsl_definition.name
     if inventory then
         --local _placeholder_number = inventory.get_item_count(placeholder_name)
@@ -128,18 +109,10 @@ end
 --- @return nil
 function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
     local placeholder_name = rsl_definition.name
-    local transport_lines = {
-        entity.get_transport_line(defines.transport_line.left_line),
-        entity.get_transport_line(defines.transport_line.left_underground_line),
-        entity.get_transport_line(defines.transport_line.secondary_left_line),
-        entity.get_transport_line(defines.transport_line.right_line),
-        entity.get_transport_line(defines.transport_line.right_underground_line),
-        entity.get_transport_line(defines.transport_line.secondary_right_line),
-    }
-    for _, line in pairs(transport_lines) do
---[[        if line.get_item_count(placeholder_name) == 0 then
-            goto continue
-        end]]
+    entity.get_max_transport_line_index()
+    for i = 1, entity.get_max_transport_line_index() do
+        local line = entity.get_transport_line(i)
+
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder_name then
@@ -147,10 +120,12 @@ function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
             end
         end
---        ::continue::
     end
 end
 
+---@param lines LuaTransportLine[]
+---@param placeholder string
+---@param rsl_definition RslDefinition
 local function _hotswap_in_splitter_lines(lines, placeholder, rsl_definition)
     for _, line in pairs(lines) do
         for i = 1, #line do
@@ -204,7 +179,7 @@ end
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_bot(entity, rsl_definition)
-    local stack = entity.get_inventory(1)[1]
+    local stack = entity.get_inventory(defines.inventory.robot_cargo)[1]
     if stack.valid_for_read then
         local result = select_result(rsl_definition)
         swap_funcs.set_or_nil_stack(stack, result)
@@ -215,7 +190,7 @@ end
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_cargo_pod(entity, rsl_definition)
-    local stack = entity.get_inventory(1)[1]
+    local stack = entity.get_inventory(defines.inventory.cargo_unit)[1]
     if stack.valid_for_read then
         local result = select_result(rsl_definition)
         swap_funcs.set_or_nil_stack(stack, result)
@@ -256,7 +231,7 @@ end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
 --- @param rsl_definition RslDefinition the name of the placeholder item.
---- @param inventory_definition defines.inventory.car_trunk|defines.inventory.cargo_wagon|defines.inventory.chest|defines.inventory.hub_main|defines.inventory.rocket_silo_rocket
+--- @param inventory_definition defines.inventory
 --- @return nil
 function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, inventory_definition)
     local placeholder_name = rsl_definition.name
@@ -338,7 +313,8 @@ function swap_funcs.hotswap_in_mining_drill(entity, rsl_definition)
     -- must be set to true
     --local placeholder_name = rsl_definition.name
     --local inventory = "..."
-    return end  
+    return
+end
 
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
