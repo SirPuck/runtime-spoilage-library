@@ -1,5 +1,3 @@
-local selection_funcs = require("selection")
-
 --- Defines the mode in which results are selected.
 ---@class ModeType
 ---@field random boolean
@@ -15,7 +13,7 @@ local selection_funcs = require("selection")
 ---@class RslArgs
 ---@field mode ModeType The mode settings for result selection.
 ---@field condition? RemoteCall The remote call used if the mode is conditional. If it's not conditional, it'll just use `true`.
----@field possible_results table<boolean, RslWeightedItem[]> The possible outcomes based on condition results.
+---@field possible_results table<boolean, RslItems> The possible outcomes based on condition results.
 local args_model = {
     mode = {random = false, conditional = false, weighted = false},
     condition = nil,
@@ -29,11 +27,11 @@ local args_model = {
 
 local registry = {}
 
----@param possible_results RslWeightedItem[]
+---@param possible_results RslItems
 ---@return RslWeightedItems
 local function preprocess_weights(possible_results)
     local cumulative_weight = 0
-    ---@type RslWeightedItems
+    ---@type RslItems
     local sorted_options = {}
 
     -- Build sorted list of cumulative weights
@@ -48,6 +46,7 @@ local function preprocess_weights(possible_results)
         return a.weight < b.weight
     end)
 
+    ---@cast sorted_options RslWeightedItems
     sorted_options.cumulative_weight = cumulative_weight
     return sorted_options
 end
@@ -125,15 +124,15 @@ function registry.register_rsl_definition(item_name, args)
     ---@type RslSelectionMode
     local selection_mode
     if not args.mode.random then
-        selection_mode = selection_funcs.nonrandom
+        selection_mode = "nonrandom"
     elseif args.mode.weighted then
-        selection_mode = selection_funcs.weighted_choice
+        selection_mode = "weighted_choice"
         -- Preprocess all the results to allow for the weighted choice function to work properly
         for key, results in pairs(possible_results) do
             possible_results[key] = preprocess_weights(results)
         end
     else
-        selection_mode = selection_funcs.select_one_result_over_n_unweighted
+        selection_mode = "select_one_result_over_n_unweighted"
     end
 
     --- Condition evaluation
@@ -166,6 +165,7 @@ end
 local registered_rsl_def_exemple = {
     ["iron-plate-rsl-placeholder"] = 
         {
+---@diagnostic disable-next-line: undefined-global, no-unknown
             selection_mode = function(item) return selection_funcs.weighted_choice(item) end,
             name = "iron-plate-rsl-placeholder",
             condition = true,

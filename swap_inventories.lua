@@ -1,3 +1,4 @@
+local select_result = require("selection")
 local swap_funcs = {}
 
 local enable_swap_in_assembler = false
@@ -41,51 +42,18 @@ remote.add_interface("rsl_library", {
 ---@field name string The name of the result item.
 ---@field weight? number The weight for weighted selection (optional).
 
----@class RslWeightedItems : {[number]:RslWeightedItem}
+---@class RslItems : {[number]:RslWeightedItem}
+---@class RslWeightedItems : RslItems
 ---@field cumulative_weight number
-
---- Represents the selection mode function.
----@alias RslSelectionMode fun(item: table): string?
 
 --- Represents the structure of an RSL definition.
 ---@class RslDefinition
 ---@field selection_mode RslSelectionMode Function to determine selection logic.
 ---@field name string The unique name of the RSL definition.
 ---@field condition true|RemoteCall Condition to trigger the RSL result; can be a boolean or a function.
----@field possible_results table<any, RslWeightedItem[]|RslWeightedItems?> A table mapping outcomes (true/false) to lists of result items.
+---@field possible_results table<any, RslItems|RslWeightedItems?> A table mapping outcomes (true/false) to lists of result items.
 ---@field event? EventData.on_script_trigger_effect Just for smuggling the event to the remote function
 
-
--- Inventory swapping functions
-------------------------
----@param rsl_definition RslDefinition
----@return string?
-local function select_result(rsl_definition)
-    local condition = rsl_definition.condition
-
-    if condition == true then
-        return rsl_definition.selection_mode(rsl_definition.possible_results[true])
-    end
-
-    local event = rsl_definition.event
-    if type(condition) == "table" then
-        local success, result = pcall(remote.call, condition.remote_mod, condition.remote_function, event)
-        if not success then
-            if type(result) == "string" then
-                log("Remote call errored. Continuing without a result. Err:\n"..result)
-            else
-                log("Remote call errored. Continuing without a result.")
-            end
-            return
-        end
-        local options_list = rsl_definition.possible_results[result]
-        if not options_list then return end -- If there's no possible results, why have a selection function?
-        return rsl_definition.selection_mode(options_list)
-    end
-
-    --local options_list = rsl_definition.possible_results[success]
-    --return rsl_definition.selection_mode(options_list)
-end
 
 ---@param stack LuaItemStack
 ---@param result string|nil

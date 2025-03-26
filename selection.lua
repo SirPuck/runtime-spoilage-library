@@ -1,9 +1,9 @@
----@alias selection_funcs
+---@alias RslSelectionMode
 ---| "weighted_choice"
 ---| "select_one_result_over_n_unweighted"
 ---| "nonrandom"
 
----@type table<selection_funcs,fun(possible_results:RslWeightedItem[]):string?>
+---@type table<RslSelectionMode,fun(possible_results:RslItems):string?>
 local selection_funcs = {}
 
 ---@param possible_results RslWeightedItems
@@ -38,4 +38,44 @@ function selection_funcs.nonrandom(possible_results)
     return possible_results[1].name
 end
 
-return selection_funcs
+---@param mode RslSelectionMode
+---@param results RslItems?
+---@return string?
+local function call_selection(mode, results)
+    if not results then return end -- There's no possible results. Give up
+    local func = selection_funcs[mode]
+    if not func then error("Somehow the selection mode had an invalid value") end
+    return func(results)
+end
+
+-- Inventory swapping functions
+------------------------
+---@param rsl_definition RslDefinition
+---@return string?
+local function select_result(rsl_definition)
+    local condition = rsl_definition.condition
+
+    if condition == true then
+        return call_selection(rsl_definition.selection_mode, rsl_definition.possible_results[true])
+    end
+
+    local event = rsl_definition.event
+    if type(condition) == "table" then
+        local success, result = pcall(remote.call, condition.remote_mod, condition.remote_function, event)
+        if not success then
+            if type(result) == "string" then
+                log("Remote call errored. Continuing without a result. Err:\n"..result)
+            else
+                log("Remote call errored. Continuing without a result.")
+            end
+            return
+        end
+        local options_list = rsl_definition.possible_results[result]
+        return call_selection(rsl_definition.selection_mode, options_list)
+    end
+
+    --local options_list = rsl_definition.possible_results[success]
+    --return rsl_definition.selection_mode(options_list)
+end
+
+return select_result
