@@ -52,7 +52,7 @@ function registry.register_spoilable_item(item, items_per_trigger, fallback_spoi
 
     item.spoil_to_trigger_result = 
     {
-        items_per_trigger = 1,
+        items_per_trigger = item.stack_size, --This allows to trigger only one event by default for the entire stack.
         trigger = 
         {
             {
