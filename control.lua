@@ -14,6 +14,7 @@ remote.add_interface("rsl_registry",
 )
 
 
+---@type table<string,fun(entity:LuaEntity,rsl_definition:RslDefinition)>
 local generic_source_handler = {
     ["inserter"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_inserter(entity, rsl_definition) end,
     ["logistic-robot"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_bot(entity, rsl_definition) end,
@@ -37,6 +38,7 @@ local generic_source_handler = {
     ["spider-vehicle"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_spider(entity, rsl_definition) end,
 }
 
+---@type table<string,defines.inventory>
 local defined_inventories = {
     ["car"] = defines.inventory.car_trunk,
     ["cargo-wagon"] = defines.inventory.cargo_wagon,
@@ -45,7 +47,7 @@ local defined_inventories = {
     ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
     ["locomotive"] = defines.inventory.fuel,
     ["beacon"] = defines.inventory.beacon_modules,
-    ["asteroid-collector"] = 1,
+    ["asteroid-collector"] = defines.inventory.chest, -- Currently does not exist? Just using chest for the warning
     ["reactor"] = defines.inventory.fuel,
     ["fusion-reactor"] = defines.inventory.fuel,
 }
@@ -65,6 +67,9 @@ end
 ---@type table<string, boolean|{prefix:string, suffix:string}>
 local cached_event_ids = {}
 
+---@param effect_id string
+---@return string?
+---@return string?
 local function get_suffix_and_prefix_from_effect_id(effect_id)
     local cached_value =  cached_event_ids[effect_id]
     if cached_value == false then
@@ -74,8 +79,10 @@ local function get_suffix_and_prefix_from_effect_id(effect_id)
         local prefix, suffix = split_suffix_and_prefix(effect_id)
 
         if prefix ~= nil and suffix ~= nil then
-            cached_event_ids[effect_id] = {prefix = prefix, suffix = suffix}
+            ---@cast prefix string
+            ---@cast suffix string
             cached_value = {prefix = prefix, suffix = suffix}
+            cached_event_ids[effect_id] = cached_value
         else
             cached_event_ids[effect_id] = false
             return nil, nil
@@ -87,6 +94,8 @@ local function get_suffix_and_prefix_from_effect_id(effect_id)
 
 end
 
+---@param event EventData.on_script_trigger_effect
+---@param placeholder string
 local function swap_item(event, placeholder)
     local rsl_definition = rsl_definitions[placeholder]
     rsl_definition.event = event
@@ -104,7 +113,8 @@ end
 
 local current_event = {id = "", tick = nil, unit_number = nil}
 
-local function on_spoil(event)    
+---@param event EventData.on_script_trigger_effect
+local function on_spoil(event)
     if event.source_entity ~= nil then
         if event.effect_id == current_event.id
             and event.tick == current_event.tick
@@ -118,16 +128,14 @@ local function on_spoil(event)
         end
     end
 
-    if event.effect_id then
-        local prefix, suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
+    local prefix, suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
 
-        if prefix == nil or suffix == nil then
-            return
-        end
+    if prefix == nil or suffix == nil then
+        return
+    end
 
-        if prefix == "rsl_" then
-            swap_item(event, suffix)
-        end
+    if prefix == "rsl_" then
+        swap_item(event, suffix)
     end
 end
 

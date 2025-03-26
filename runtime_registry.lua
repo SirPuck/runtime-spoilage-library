@@ -15,7 +15,7 @@ local selection_funcs = require("selection")
 ---@class RslArgs
 ---@field mode ModeType The mode settings for result selection.
 ---@field condition nil|boolean|RemoteCall The condition can be true, false, or a remote call structure.
----@field possible_results table<boolean, {name: string, weight?: number}[]> The possible outcomes based on condition results.
+---@field possible_results table<boolean, RslWeightedItem[]> The possible outcomes based on condition results.
 local args_model = {
     mode = {random = false, conditional = false, weighted = false},
     condition = nil,
@@ -29,32 +29,33 @@ local args_model = {
 
 local registry = {}
 
+---@param possible_results RslWeightedItem[]
+---@return RslWeightedItems
 local function preprocess_weights(possible_results)
     local cumulative_weight = 0
+    ---@type RslWeightedItems
     local sorted_options = {}
 
     -- Build sorted list of cumulative weights
-    for _, option in ipairs(possible_results) do
-        cumulative_weight = cumulative_weight + option.weight
-        table.insert(sorted_options, { cumulative_weight = cumulative_weight, name = option.name})
+    for _, option in pairs(possible_results) do
+        cumulative_weight = cumulative_weight + option.weight--[[@as number]]
+        table.insert(sorted_options, { weight = cumulative_weight, name = option.name})
     end
 
     -- Ensure sorting is correct (ascending order)
     table.sort(sorted_options, function(a, b)
-        return a.cumulative_weight < b.cumulative_weight
+        return a.weight < b.weight
     end)
 
-    return {
-            cumulative_weight = cumulative_weight,
-            options = sorted_options
-        }
-
+    sorted_options.cumulative_weight = cumulative_weight
+    return sorted_options
 end
 
+---@type table<string,RslDefinition>
 registry.rsl_definitions = registry.rsl_definitions or {}
----comment
----@param item_name string
----@param args RslArgs
+---Register a new RSL definition remotely.
+---@param item_name string The name of the item the will spoil.
+---@param args RslArgs The arguments for the RSL definition.
 function registry.register_rsl_definition(item_name, args)
     local placeholder_name = item_name .. "-rsl-placeholder"
     local rsl_definition =  {
