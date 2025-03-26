@@ -9,19 +9,23 @@
 ---@field remote_mod string The name of the mod exposing the function.
 ---@field remote_function string The name of the function to call.
 
+--- Represents a possible result item with an optional weight.
+---@class RslWeightedItem
+---@field name string The name of the result item.
+---@field weight? number The weight for weighted selection (optional).
+
 --- Arguments for registering an RSL definition.
 ---@class RslArgs
 ---@field mode ModeType The mode settings for result selection.
 ---@field condition? RemoteCall The remote call used if the mode is conditional. If it's not conditional, it'll just use `true`.
----@field possible_results table<boolean, RslItems> The possible outcomes based on condition results.
+---@field possible_results table<any, RslWeightedItem[]> The possible outcomes based on condition results.
 local args_model = {
     mode = {random = false, conditional = false, weighted = false},
     condition = nil,
     possible_results = {
         [true] = {
             {name = "", weight = 1}
-        },
-        [false] = {}
+        }
     }
 }
 

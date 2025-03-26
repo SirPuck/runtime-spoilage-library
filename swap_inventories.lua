@@ -37,11 +37,6 @@ remote.add_interface("rsl_library", {
     end
 })
 
---- Represents a possible result item with an optional weight.
----@class RslWeightedItem
----@field name string The name of the result item.
----@field weight? number The weight for weighted selection (optional).
-
 ---@class RslItems : {[number]:RslWeightedItem}
 ---@class RslWeightedItems : RslItems
 ---@field cumulative_weight number
