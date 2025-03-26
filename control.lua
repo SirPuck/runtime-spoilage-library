@@ -105,18 +105,6 @@ end
 local current_event = {id = "", tick = nil, unit_number = nil}
 
 local function on_spoil(event)    
-    if event.source_entity ~= nil then
-        if event.effect_id == current_event.id
-            and event.tick == current_event.tick
-            and event.source_entity.unit_number == current_event.unit_number
-                then
-                    return
-        else
-            current_event.id = event.effect_id
-            current_event.tick = event.tick
-            current_event.unit_number = event.source_entity.unit_number
-        end
-    end
 
     if event.effect_id then
         local prefix, suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
