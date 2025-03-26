@@ -3,38 +3,32 @@ local swap_funcs = require("swap_inventories")
 local registry = runtime_registry.registry
 local rsl_definitions = registry.rsl_definitions
 
-remote.add_interface("rsl_registry",
-    {
-    ---Register a new RSL definition remotely.
-    ---@param item_name string The name of the item the will spoil.
-    ---@param args RslArgs The arguments for the RSL definition.
-    register_rsl_definition = function(item_name, args)
-        registry.register_rsl_definition(item_name, args)
-    end}
-)
+remote.add_interface("rsl_registry", {
+    register_rsl_definition = registry.register_rsl_definition
+})
 
 
 local generic_source_handler = {
-    ["inserter"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_inserter(entity, rsl_definition) end,
-    ["logistic-robot"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_bot(entity, rsl_definition) end,
-    ["construction-robot"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_bot(entity, rsl_definition) end,
-    ["transport-belt"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_belt(entity, rsl_definition) end,
-    ["loader"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_belt(entity, rsl_definition) end,
-    ["underground-belt"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_underground_belt(entity, rsl_definition) end,
-    ["splitter"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_splitter(entity, rsl_definition) end,
-    ["assembling-machine"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_machine(entity, rsl_definition) end,
-    ["character"] = function(entity, rsl_definition) return swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition) end,
-    ["logistic-container"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition) end,
-    ["cargo-landing-pad"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition) end,
-    ["item-entity"] = function(entity, rsl_definition) return swap_funcs.hotswap_on_ground(entity, rsl_definition) end,
-    ["furnace"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_furnace(entity, rsl_definition) end,
-    ["mining-drill"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_mining_drill(entity, rsl_definition) end,
-    ["boiler"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition) end,
-    ["lab"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_lab_inventory(entity, rsl_definition) end,
-    ["cargo-pod"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_cargo_pod(entity, rsl_definition) end,
-    ["roboport"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_roboport(entity, rsl_definition) end,
-    ["agricultural-tower"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_agricultural_tower(entity, rsl_definition) end,
-    ["spider-vehicle"] = function(entity, rsl_definition) return swap_funcs.hotswap_in_spider(entity, rsl_definition) end,
+    ["inserter"] = swap_funcs.hotswap_in_inserter,
+    ["logistic-robot"] = swap_funcs.hotswap_in_bot,
+    ["construction-robot"] = swap_funcs.hotswap_in_bot,
+    ["transport-belt"] = swap_funcs.hotswap_in_belt,
+    ["loader"] = swap_funcs.hotswap_in_belt,
+    ["underground-belt"] = swap_funcs.hotswap_in_underground_belt,
+    ["splitter"] = swap_funcs.hotswap_in_splitter,
+    ["assembling-machine"] = swap_funcs.hotswap_in_machine,
+    ["character"] = swap_funcs.hotswap_item_in_character_inventory,
+    ["logistic-container"] = swap_funcs.hotswap_in_logistic_inventory,
+    ["cargo-landing-pad"] = swap_funcs.hotswap_in_logistic_inventory,
+    ["item-entity"] = swap_funcs.hotswap_on_ground,
+    ["furnace"] = swap_funcs.hotswap_in_furnace,
+    ["mining-drill"] = swap_funcs.hotswap_in_mining_drill,
+    ["boiler"] = swap_funcs.hotswap_in_boiler_inventory,
+    ["lab"] = swap_funcs.hotswap_in_lab_inventory,
+    ["cargo-pod"] = swap_funcs.hotswap_in_cargo_pod,
+    ["roboport"] = swap_funcs.hotswap_in_roboport,
+    ["agricultural-tower"] = swap_funcs.hotswap_in_agricultural_tower,
+    ["spider-vehicle"] = swap_funcs.hotswap_in_spider,
 }
 
 local defined_inventories = {

@@ -52,9 +52,9 @@ local function preprocess_weights(possible_results)
 end
 
 registry.rsl_definitions = registry.rsl_definitions or {}
----comment
----@param item_name string
----@param args RslArgs
+---Register a new RSL definition remotely.
+---@param item_name string The name of the item the will spoil.
+---@param args RslArgs The arguments for the RSL definition.
 function registry.register_rsl_definition(item_name, args)
     local placeholder_name = item_name .. "-rsl-placeholder"
     local rsl_definition =  {
