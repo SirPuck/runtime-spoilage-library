@@ -1,7 +1,10 @@
 local runtime_registry = require("runtime_registry")
 local swap_funcs = require("swap_inventories")
 local registry = runtime_registry.registry
-local rsl_definitions = registry.rsl_definitions
+
+local rsl_definitions = storage.rsl_definitions
+--- Note, that does not actually work because storage will
+--- not have been set up by the point this runs. It's purely symbolic
 
 remote.add_interface("rsl_registry",
     {
@@ -142,7 +145,28 @@ end
 
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
+---@class RslStorage
+---@field rsl_definitions table<string,RslDefinition>
+storage = storage
 
---script.on_init(function()end)
+---Will set up the storage for after init or configuration changed.
+---Clears the registry because if the mods change or a startup setting changed
+---The registry is likely to not be valid anymore, so just force everyone to re-register
+---
+---This is similar to what was already being done, but ***NOT ABUSING ON_LOAD!***
+---`on_load` has a very limit use case. Setting things up in it is not one of them!
+---
+---This also means that mods *have* to require us as a dependency instead of just ignoring that entirely.
+---Because if they run their configuration changed before ours, we'll just clear their registrations.
+local function setup_storage()
+    rsl_definitions = {}
+    storage.rsl_definitions = rsl_definitions
+end
+--- THIS is how you use on_load
+--- to restore references to objects in storage
+script.on_load(function ()
+    rsl_definitions = storage.rsl_definitions
+end)
 
---script.on_configuration_changed(function(event)end)
+script.on_init(setup_storage)
+script.on_configuration_changed(setup_storage)

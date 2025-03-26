@@ -95,12 +95,13 @@ local function validate_remote_call(remote_call)
     end
 end
 
----@type table<string,RslDefinition>
-registry.rsl_definitions = registry.rsl_definitions or {}
 ---Register a new RSL definition remotely.
 ---@param item_name string The name of the item the will spoil.
 ---@param args RslArgs The arguments for the RSL definition.
 function registry.register_rsl_definition(item_name, args)
+    if not game then
+        return error("Runtime Spoilage Library has been updated and registering in on_load is no longer necessary, or valid.", 2)
+    end
     local placeholder_name = item_name .. "-rsl-placeholder"
 
     --- Complain about inane mode combinations
@@ -152,7 +153,7 @@ function registry.register_rsl_definition(item_name, args)
         }
     end
 
-    registry.rsl_definitions[placeholder_name] = {
+    storage.rsl_definitions[placeholder_name] = {
         name = placeholder_name,
         possible_results = possible_results,
         event = nil,
