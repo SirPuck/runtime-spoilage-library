@@ -109,7 +109,7 @@ end
 --- @return nil
 function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
     local placeholder_name = rsl_definition.name
-    entity.get_max_transport_line_index()
+    
     for i = 1, entity.get_max_transport_line_index() do
         local line = entity.get_transport_line(i)
 
@@ -118,6 +118,7 @@ function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
             if stack.valid_for_read and stack.name == placeholder_name then
                 local result = select_result(rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
+                return
             end
         end
     end
@@ -133,6 +134,7 @@ local function _hotswap_in_splitter_lines(lines, placeholder, rsl_definition)
             if stack.valid_for_read and stack.name == placeholder then
                 local result = select_result(rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
+                return
             end
         end
     end
