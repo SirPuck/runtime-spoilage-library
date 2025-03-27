@@ -23,6 +23,8 @@ function registry.set_placeholder_spoil_into_self(value)
     end
 end
 
+---@type data.ItemPrototype
+---@diagnostic disable-next-line: missing-fields
 local placeholder_model = {
     type = "item",
     --icon = "__base__/graphics/icons/production-science-pack.png",
@@ -37,9 +39,9 @@ local placeholder_model = {
 
 ---comment
 ---@param item data.ItemPrototype
----@param items_per_trigger int number of items needed to trigger the script
----@param fallback_spoilage string the item that will be used if the script cannot transform your item. (Like in furnaces or assembling machines). Default is nil (the item will just disappear on spoil) but you should either put "spoilage" or any item of your choice.
----@param custom_trigger TriggerItem 
+---@param items_per_trigger? int | nil nil this unless you know what you are doing. A spoiling stack will raise only one event if items_per_trigger == item.stack_size, which is the default wanted behavior.
+---@param fallback_spoilage? string the item that will be used if the script cannot transform your item. (Like in furnaces or assembling machines). Default is nil (the item will just disappear on spoil) but you should either put "spoilage" or any item of your choice.
+---@param custom_trigger? TriggerItem 
 function registry.register_spoilable_item(item, items_per_trigger, fallback_spoilage, custom_trigger)
     --- Build placeholder item
     local placeholder = table.deepcopy(placeholder_model)
@@ -48,29 +50,29 @@ function registry.register_spoilable_item(item, items_per_trigger, fallback_spoi
 
     placeholder.weight = item.weight
 
-    item.spoil_to_trigger_result = 
-    {
-        items_per_trigger = 1,
-        trigger = 
+    item.spoil_to_trigger_result =
         {
+            items_per_trigger = item.stack_size, --This allows to trigger only one event by default for the entire stack.
+            trigger = 
             {
-                type = "direct",
-                action_delivery =
-                    {
-                    type = "instant",
-                    source_effects = 
-                    {
+                {
+                    type = "direct",
+                    action_delivery =
                         {
-                            type = "script",
-                            effect_id = "rsl_" .. placeholder.name
-                        },
+                        type = "instant",
+                        source_effects = 
+                        {
+                            {
+                                type = "script",
+                                effect_id = "rsl_" .. placeholder.name
+                            },
+                        }
                     }
-                }
-            },
+                },
+            }
         }
-    }
 
-    if items_per_trigger then
+    if items_per_trigger ~= nil then
         item.spoil_to_trigger_result.items_per_trigger = items_per_trigger
     end
     if custom_trigger then

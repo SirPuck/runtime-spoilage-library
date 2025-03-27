@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 27. 03. 2025
+  Changes:
+    - Performance improvements.
+  Features:
+    - By PennyJim : Add support for non-boolean conditions (new advanced example showcases this)
+  Bugfixes:
+    - Remove global variable assignation.
+---------------------------------------------------------------------------------------------------
 Version: 0.2.2
 Date: 17. 03. 2025
   Changes:
