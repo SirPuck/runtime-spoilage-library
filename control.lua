@@ -108,20 +108,16 @@ local function swap_item(event, placeholder)
     end
 end
 
-local current_event = {id = "", tick = nil, unit_number = nil}
 
-
-local function on_spoil(event)    
-
-    local prefix, suffix = get_suffix_and_prefix_from_effect_id(event.effect_id)
-
-    if prefix == nil or suffix == nil then
-        return
+local function get_suffix(str)
+    if string.sub(str, 1, 4) == "rsl_" then
+        return string.sub(str, 5)
     end
+end
 
-    if prefix == "rsl_" then
-        swap_item(event, suffix)
-    end
+local function on_spoil(event)
+    local suffix = get_suffix(event.effect_id)
+    if suffix then swap_item(event, suffix) end
 end
 
 
