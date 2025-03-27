@@ -4,7 +4,7 @@ Date: 27. 03. 2025
   Changes:
     - Performance improvements.
   Features:
-    - Add support for non-boolean conditions (new advanced example showcases this)
+    - By PennyJim : Add support for non-boolean conditions (new advanced example showcases this)
   Bugfixes:
     - Remove global variable assignation.
 ---------------------------------------------------------------------------------------------------

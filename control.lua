@@ -146,5 +146,18 @@ script.on_load(function ()
     rsl_definitions = storage.rsl_definitions
 end)
 
-script.on_init(setup_storage)
+local function patreon()
+    for _, player in pairs(game.players) do
+--[[         player.print("[item=spoilage] A mod you are using is powered by RSL: Runtime Spoilage Library !")
+        player.print("Support development: patreon.com/SirPuck") ]]
+        player.print("[color=154,255,0][item=spoilage] A mod you are using is powered by RSL: Runtime Spoilage Library![/color]")
+        player.print("[color=154,255,0]Support development: patreon.com/SirPuck[/color]")
+
+    end
+end
+
+script.on_init(function()
+    setup_storage()
+    patreon()
+end)
 script.on_configuration_changed(setup_storage)
