@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.1
+Date: 27. 03. 2025
+  Changes:
+    - Remove the switch to enable / disable swap in assemblers as it's no longer needed.
+    - Remove some unused funcs.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 27. 03. 2025
   Changes:

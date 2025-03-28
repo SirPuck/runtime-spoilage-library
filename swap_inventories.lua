@@ -1,8 +1,6 @@
 local select_result = require("selection")
 local swap_funcs = {}
 
-local enable_swap_in_assembler = false
-
 ---@type QualityID[]
 local qualities = {}
 local _quality = prototypes.quality.normal
@@ -10,32 +8,6 @@ while _quality do
     table.insert(qualities, _quality.name)
     _quality = _quality.next
 end
-
-
-remote.add_interface("rsl_library", {
-    --- Enable or disable swap in assembler functionality.
-    --- To be clear : this doesn't work. We can replace items arbitrarly at runtime in an assembler
-    --- because its slots only accepts items based on the selected recipe. If you want the script to work, you NEED to add all the possible spoiled
-    --- outcomes controlles by RSL of all the subsequent steps to the recipe of the spoilable item, but giving 0.
-    --- ex:  (recipe)   results = {
-        --{type = "item", name = "your-spoilable-item", amount = 1},
-        --  {type = "item", name = "steel-plate", amount = 0}, --one possible rsl outcome
-        --  {type = "item", name = "copper-plate", amount = 0}, --another possible rsl outcome
-        --},
-    ---@param state boolean Whether to enable (true) or disable (false) the feature.
-    set_swap_in_assembler_BROKEN = function(state)
-        if type(state) ~= "boolean" then
-            error("Invalid parameter: 'state' must be a boolean.")
-        end
-        enable_swap_in_assembler = state
-    end,
-
-    --- Get the current state of swap in assembler functionality.
-    ---@return boolean The current state of the feature.
-    get_swap_in_assembler = function()
-        return enable_swap_in_assembler
-    end
-})
 
 ---@class RslItems : {[number]:RslWeightedItem}
 ---@class RslWeightedItems : RslItems
@@ -170,7 +142,6 @@ end
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_inserter(entity, rsl_definition)
-    --local result = math.random() < 0.5 and "iron-plate" or "copper-plate"
     if entity.held_stack.valid_for_read then
         local result = select_result(rsl_definition)
         swap_funcs.set_or_nil_stack(entity.held_stack, result)
