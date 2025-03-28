@@ -18,8 +18,6 @@ All these things are possible.
 
 # Limitations (read this, please, like, really, this is important)
 
-I included two switches : "placeholder_spoil_into_self" in the data_registry module, and "enable_swap_in_assembler" in the swap_inventories module. They are both set to false by default.
-
 If you add a spoilable ore, you will either need to set placeholder_spoil_into_self to true, or define a fallback for your ore item.
 
 Adding a "fallback_spoilage" allows the game to still spoil the item into another item even if RSL cannot access the target inventory (if the inventory is an internal buffer, like for mining drills for instance).
