@@ -79,6 +79,8 @@ end
 local function validate_result(location, result)
     if type(result) ~= "table" then
         location_error(location, "Expected a result item table. Got a '"..type(result).."' instead", 3)
+    elseif result[1] then
+        location_error(location, "Result item table has an array portion. Did you add an extra layer of brackets?", 3)
     elseif type(result.name) ~= "string" then
         location_error(location, "Expected a string for the name of the result item. Got a '"..type(result.name).."' instead", 3)
     elseif result.weight ~= nil and type(result.weight) ~= "number" then
@@ -142,6 +144,10 @@ function registry.register_rsl_definition(item_name, args)
         end
 
         for i, result in pairs(results) do
+            if type(i) ~= "number" then
+                location_error(location, "The index of `"..i.."` is not a number. You might be missing brackets somewhere.", 2)
+            end
+
             location[4] = "["..i.."]"
             validate_result(location, result)
             location[4] = nil
