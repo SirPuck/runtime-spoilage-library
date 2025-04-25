@@ -18,8 +18,6 @@ All these things are possible.
 
 # Limitations (read this, please, like, really, this is important)
 
-I included two switches : "placeholder_spoil_into_self" in the data_registry module, and "enable_swap_in_assembler" in the swap_inventories module. They are both set to false by default.
-
 If you add a spoilable ore, you will either need to set placeholder_spoil_into_self to true, or define a fallback for your ore item.
 
 Adding a "fallback_spoilage" allows the game to still spoil the item into another item even if RSL cannot access the target inventory (if the inventory is an internal buffer, like for mining drills for instance).
@@ -36,7 +34,10 @@ local rsl = require("__runtime-spoilage-library__/data_registry")
 ```
 You can then call the registry doing :
 ```lua
-rsl.register_spoilable_item(youritemtable, number of items to trigger, fallback_item_name (optional), custom script (optional) )
+--- Please not that you should put "nil" or just nothing for number of items_per_trigger unless you REALLY know what you are doing.
+--- If you do this, RSL will automatically adjust this value so only one event is raised when a stack spoils, which
+--- is VERY important for performance if you intend to apply RSL to mass produced items.
+rsl.register_spoilable_item(youritemtable, items_per_trigger, fallback_item_name (optional), custom script (optional) )
 ```
 In your control.lua, you will need to make a remote call to RSL and pass it your item name and a list of args :
 
@@ -104,7 +105,7 @@ local mutation_a = {
 --3) (optional) placeholder fallback spoiling result (used in case the script cannot replace the item at runtime. If you don't set anything, the item will just be deleted like if it spoiled into nothing if this happens. For instance, unless you are an advanced user and know how you can handle furnaces and assembling machines, you better set something here like "spoilage")
 --4) (optional) trigger -- you may add another triggered effect
 
-rsl.register_spoilable_item(mutation_a, 1)
+rsl.register_spoilable_item(mutation_a)
 
 ```
 Exemple of additional trigger effect :

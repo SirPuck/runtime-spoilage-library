@@ -1,8 +1,6 @@
 local select_result = require("selection")
 local swap_funcs = {}
 
-local enable_swap_in_assembler = false
-
 ---@type QualityID[]
 local qualities = {}
 local _quality = prototypes.quality.normal
@@ -10,32 +8,6 @@ while _quality do
     table.insert(qualities, _quality.name)
     _quality = _quality.next
 end
-
-
-remote.add_interface("rsl_library", {
-    --- Enable or disable swap in assembler functionality.
-    --- To be clear : this doesn't work. We can replace items arbitrarly at runtime in an assembler
-    --- because its slots only accepts items based on the selected recipe. If you want the script to work, you NEED to add all the possible spoiled
-    --- outcomes controlles by RSL of all the subsequent steps to the recipe of the spoilable item, but giving 0.
-    --- ex:  (recipe)   results = {
-        --{type = "item", name = "your-spoilable-item", amount = 1},
-        --  {type = "item", name = "steel-plate", amount = 0}, --one possible rsl outcome
-        --  {type = "item", name = "copper-plate", amount = 0}, --another possible rsl outcome
-        --},
-    ---@param state boolean Whether to enable (true) or disable (false) the feature.
-    set_swap_in_assembler_BROKEN = function(state)
-        if type(state) ~= "boolean" then
-            error("Invalid parameter: 'state' must be a boolean.")
-        end
-        enable_swap_in_assembler = state
-    end,
-
-    --- Get the current state of swap in assembler functionality.
-    ---@return boolean The current state of the feature.
-    get_swap_in_assembler = function()
-        return enable_swap_in_assembler
-    end
-})
 
 ---@class RslItems : {[number]:RslWeightedItem}
 ---@class RslWeightedItems : RslItems
@@ -70,7 +42,7 @@ function swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition)
     if inventory then
         --local _placeholder_number = inventory.get_item_count(placeholder_name)
         for _, quality in pairs(qualities) do
-            removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+            local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 local result = select_result(rsl_definition)
                 if result ~= nil then
@@ -109,7 +81,7 @@ end
 --- @return nil
 function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
     local placeholder_name = rsl_definition.name
-    entity.get_max_transport_line_index()
+    
     for i = 1, entity.get_max_transport_line_index() do
         local line = entity.get_transport_line(i)
 
@@ -118,6 +90,7 @@ function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
             if stack.valid_for_read and stack.name == placeholder_name then
                 local result = select_result(rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
+                return
             end
         end
     end
@@ -133,6 +106,7 @@ local function _hotswap_in_splitter_lines(lines, placeholder, rsl_definition)
             if stack.valid_for_read and stack.name == placeholder then
                 local result = select_result(rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
+                return
             end
         end
     end
@@ -168,7 +142,6 @@ end
 --- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_inserter(entity, rsl_definition)
-    --local result = math.random() < 0.5 and "iron-plate" or "copper-plate"
     if entity.held_stack.valid_for_read then
         local result = select_result(rsl_definition)
         swap_funcs.set_or_nil_stack(entity.held_stack, result)
@@ -216,7 +189,7 @@ function swap_funcs.hotswap_in_machine(entity, rsl_definition)
         for _, quality in pairs(qualities) do
             local item_count = inventory.get_item_count({name=placeholder_name, quality=quality})
             if item_count > 0 then
-                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     local result = select_result(rsl_definition)
                     if result ~= nil and trash ~= nil then
@@ -239,7 +212,7 @@ function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, invento
         local inventory = entity.get_inventory(inventory_definition)
         if inventory then
             for _, quality in pairs(qualities) do
-                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     local result = select_result(rsl_definition)
                     if result ~= nil then
@@ -268,7 +241,7 @@ function swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition)
     for _, inventory in pairs({input_inventory, output_inventory}) do
         if inventory then
             for _, quality in pairs(qualities) do
-                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     local result = select_result(rsl_definition)
                     if result ~= nil then
@@ -291,7 +264,7 @@ function swap_funcs.hotswap_in_lab_inventory(entity, rsl_definition)
     -- Currently, trash_inventory_size does nothing for labs so there is only one slot available. Excess spoiled items will be deleted. 
     if trash_inventory then
         for _, quality in pairs(qualities) do
-            removed = trash_inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+            local removed = trash_inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 local result = select_result(rsl_definition)
                 if result ~= nil then
@@ -334,7 +307,7 @@ function swap_funcs.hotswap_in_furnace(entity, rsl_definition)
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do
-                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     local result = select_result(rsl_definition)
                     if result ~= nil then
@@ -356,7 +329,7 @@ function swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition)
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do
-                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     local result = select_result(rsl_definition)
                     if result ~= nil then
@@ -378,7 +351,7 @@ function swap_funcs.hotswap_in_roboport(entity, rsl_definition)
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do
-                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     local result = select_result(rsl_definition)
                     if result ~= nil then
@@ -400,7 +373,7 @@ function swap_funcs.hotswap_in_agricultural_tower(entity, rsl_definition)
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do
-                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     local result = select_result(rsl_definition)
                     if result ~= nil then
@@ -422,7 +395,7 @@ function swap_funcs.hotswap_in_spider(entity, rsl_definition)
     for _, inventory in pairs(inventories) do
         if inventory then
             for _, quality in pairs(qualities) do
-                removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     local result = select_result(rsl_definition)
                     if result ~= nil then

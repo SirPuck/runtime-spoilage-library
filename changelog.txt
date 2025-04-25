@@ -1,8 +1,25 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.2.3
-Date: ????
+Version: 1.0.2
+Date: 28. 03. 2025
+  Changes:
+    - Add an arg to the data registry, allowing to set placeholder_spoil_into_self (last pos arg) for each individual item.
+    - Using a remote call to set placeholder_spoil_into_self will now override the aforementioned setting for ALL items.
+    - Also some doc cleanup.
+---------------------------------------------------------------------------------------------------
+Version: 1.0.1
+Date: 28. 03. 2025
+  Changes:
+    - Remove the switch to enable / disable swap in assemblers as it's no longer needed.
+    - Remove some unused funcs.
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 27. 03. 2025
+  Changes:
+    - Performance improvements.
   Features:
-    - Add support for non-boolean conditions (new advanced example showcases this)
+    - By PennyJim : Add support for non-boolean conditions (new advanced example showcases this)
+  Bugfixes:
+    - Remove global variable assignation.
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.2
 Date: 17. 03. 2025
