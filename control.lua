@@ -49,48 +49,6 @@ local defined_inventories = {
     ["fusion-reactor"] = defines.inventory.fuel,
 }
 
-
-local function split_suffix_and_prefix(effect_id)
-    -- Check if the effect_id starts with "rsl_" and extract the suffix
-    local prefix, suffix = string.match(effect_id, "^(rsl_)(.+)$")
-
-    if prefix and suffix then
-        return prefix, suffix -- Return the prefix and the remaining part as the suffix
-    end
-
-    return nil, nil -- Return nil if no match
-end
-
----@type table<string, boolean|{prefix:string, suffix:string}>
-local cached_event_ids = {}
-
----@param effect_id string
----@return string?
----@return string?
-local function get_suffix_and_prefix_from_effect_id(effect_id)
-    local cached_value =  cached_event_ids[effect_id]
-    if cached_value == false then
-        return nil, nil
-
-    elseif cached_value == nil then
-        local prefix, suffix = split_suffix_and_prefix(effect_id)
-
-        if prefix ~= nil and suffix ~= nil then
-            ---@cast prefix string
-            ---@cast suffix string
-            cached_value = {prefix = prefix, suffix = suffix}
-            cached_event_ids[effect_id] = cached_value
-        else
-            cached_event_ids[effect_id] = false
-            return nil, nil
-        end
-
-    end
-
-    return cached_value.prefix, cached_value.suffix
-
-end
-
 ---@param event EventData.on_script_trigger_effect
 ---@param placeholder string
 local function swap_item(event, placeholder)
