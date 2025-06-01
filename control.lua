@@ -99,9 +99,9 @@ local function swap_item(event, placeholder)
     if event.source_entity then
         local swap_func = generic_source_handler[event.source_entity.type]
         if swap_func ~= nil then
-            swap_func(event.source_entity, rsl_definition)
+            swap_func(event.source_entity, rsl_definition, event.quality)
         else
-            swap_funcs.hotswap_in_generic_inventory(event.source_entity, rsl_definition, defined_inventories[event.source_entity.type])
+            swap_funcs.hotswap_in_generic_inventory(event.source_entity, rsl_definition, defined_inventories[event.source_entity.type], event.quality)
         end
     else
         swap_funcs.hotswap_in_position(event, rsl_definition)
