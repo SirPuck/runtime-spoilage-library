@@ -30,6 +30,7 @@ end
 -----------------------------
 --- This function selects and returns one outcome with equals chances of selection from an array of possible items
 function selection_funcs.select_one_result_over_n_unweighted(possible_outcomes)
+    if #possible_outcomes == 0 then return nil end
     return possible_outcomes[math.random(1, #possible_outcomes)].name
 end
 
