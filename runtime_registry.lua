@@ -65,31 +65,19 @@ local index_by_value_types = {
     ["string"] = true,
 }
 
----@alias Location string[]
----@param location Location
----@param message string
----@param level? integer
-local function location_error(location, message, level)
-    level = level or 1
-    error("At " .. table.concat(location) .. ": " .. message, level + 1)
-end
-
----@param location Location
 ---@param result RslWeightedItem
-local function validate_result(location, result)
+local function validate_result(result)
     if type(result) ~= "table" then
-        location_error(location, "Expected a result item table. Got a '"..type(result).."' instead", 3)
+        error("Expected a result item table. Got a '"..type(result).."' instead", 3)
     elseif type(result.name) ~= "string" then
-        location_error(location, "Expected a string for the name of the result item. Got a '"..type(result.name).."' instead", 3)
+        error("Expected a string for the name of the result item. Got a '"..type(result.name).."' instead", 3)
     elseif result.weight ~= nil and type(result.weight) ~= "number" then
-        location_error(location, "Expected a number for the weight of the result item. Got a '"..type(result.weight).."' instead", 3)
+        error("Expected a number for the weight of the result item. Got a '"..type(result.weight).."' instead", 3)
     end
 
     local prototype = prototypes.item[result.name]
     if not prototype then
-        location[5] = "."..result.name
-        location_error(location, "The given item name did not exist.", 3)
-        location[5] = nil
+        error("The given item name, did not exist: "..result.name, 3)
     end
 end
 
@@ -126,25 +114,12 @@ function registry.register_rsl_definition(item_name, args)
 
     -- Process the given results to make sure they are not malformed
     local possible_results = args.possible_results
-    ---@type Location
-    local location = {"ROOT", ".possible_results"}
     for key, results in pairs(possible_results) do
-        local key_type = type(key)
-        if not index_by_value_types[key_type] then
-            error("The key to some of the possible results are impossible to re-index by. Prove your case if you disagree about '"..key_type.."' being unusable", 2)
+        if not index_by_value_types[type(key)] then
+            error("The key to some of the possible results are impossible to re-index by. Prove your case if you disagree about '"..type(key).."' being unusable", 2)
         end
-
-        -- Add the key to the location
-        if key_type == "string" then
-            location[3] = "[\""..key.."\"]"
-        else
-            location[3] = "["..key.."]"
-        end
-
-        for i, result in pairs(results) do
-            location[4] = "["..i.."]"
-            validate_result(location, result)
-            location[4] = nil
+        for _, result in pairs(results) do
+            validate_result(result)
         end
     end
 
