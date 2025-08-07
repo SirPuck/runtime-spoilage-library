@@ -1,13 +1,10 @@
 local runtime_registry = require("runtime_registry")
 local swap_funcs = require("swap_inventories")
 local registry = runtime_registry.registry
-
-local rsl_definitions = storage.rsl_definitions
---- Note, that does not actually work because storage will
---- not have been set up by the point this runs. It's purely symbolic
+local select_result = require("selection")
 
 remote.add_interface("rsl_registry", {
-    register_rsl_definition = registry.register_rsl_definition
+    register_condition_check = registry.register_condition_check
 })
 
 
@@ -50,39 +47,46 @@ local defined_inventories = {
 }
 
 ---@param event EventData.on_script_trigger_effect
----@param placeholder string
-local function swap_item(event, placeholder)
-    local rsl_definition = rsl_definitions[placeholder]
-    rsl_definition.event = event
+---@param rsl_definition LuaRslDefinition
+local function swap_item(event, rsl_definition)
+
+    local result = select_result(rsl_definition, event)
+
     if event.source_entity then
         local swap_func = generic_source_handler[event.source_entity.type]
         if swap_func ~= nil then
-            swap_func(event.source_entity, rsl_definition, event.quality)
+            swap_func(
+                result,
+                event.source_entity,
+                rsl_definition,
+                event.quality
+            )
         else
-            swap_funcs.hotswap_in_generic_inventory(event.source_entity, rsl_definition, defined_inventories[event.source_entity.type], event.quality)
+            swap_funcs.hotswap_in_generic_inventory(
+                result,
+                event.source_entity,
+                rsl_definition,
+                defined_inventories[event.source_entity.type],
+                event.quality
+                )
         end
     else
-        swap_funcs.hotswap_in_position(event, rsl_definition)
+        swap_funcs.hotswap_in_position(result, event, rsl_definition)
     end
 end
 
 
-local function get_suffix(str)
-    if string.sub(str, 1, 4) == "rsl_" then
-        return string.sub(str, 5)
-    end
-end
 
 local function on_spoil(event)
-    local suffix = get_suffix(event.effect_id)
-    if suffix then swap_item(event, suffix) end
+    local definition = storage.rsl_definitions[event.effect_id]
+    if definition then swap_item(event, definition) end
 end
 
 
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
 ---@class RslStorage
----@field rsl_definitions table<string,RslDefinition>
+---@field rsl_definitions table<string,LuaRslDefinition>
 storage = storage
 
 ---Will set up the storage for after init or configuration changed.
@@ -97,12 +101,8 @@ storage = storage
 local function setup_storage()
     rsl_definitions = {}
     storage.rsl_definitions = rsl_definitions
+    registry.make_registry()
 end
---- THIS is how you use on_load
---- to restore references to objects in storage
-script.on_load(function ()
-    rsl_definitions = storage.rsl_definitions
-end)
 
 local function advert()
     for _, player in pairs(game.players) do
@@ -115,3 +115,4 @@ script.on_init(function()
     advert()
 end)
 script.on_configuration_changed(setup_storage)
+

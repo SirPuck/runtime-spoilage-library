@@ -1,13 +1,9 @@
----@alias RslSelectionMode
----| "weighted_choice"
----| "select_one_result_over_n_unweighted"
----| "nonrandom"
-
----@type table<RslSelectionMode,fun(possible_results:RslItems):string?>
 local selection_funcs = {}
+local condition_check_functions = require("runtime_registry").registry.condition_check_functions
 
----@param possible_results RslWeightedItems
-function selection_funcs.weighted_choice(possible_results)
+---@param rsl_definition LuaRslDefinition
+function selection_funcs.weighted_choice(rsl_definition)
+    local possible_results = rsl_definition.possible_results
     if not possible_results then return nil end
 
     local r = math.random() * possible_results.cumulative_weight
@@ -29,54 +25,45 @@ end
 -- Random selection functions
 -----------------------------
 --- This function selects and returns one outcome with equals chances of selection from an array of possible items
-function selection_funcs.select_one_result_over_n_unweighted(possible_outcomes)
-    if #possible_outcomes == 0 then return nil end
-    return possible_outcomes[math.random(1, #possible_outcomes)].name
+---@param rsl_definition LuaRslDefinition
+function selection_funcs.select_one_result_over_n_unweighted(rsl_definition, _)
+    if #rsl_definition.possible_results == 0 then return nil end
+    return rsl_definition.possible_results[math.random(1, #rsl_definition.possible_results)].name
 end
 
----Just blindly choose the name of the first result
-function selection_funcs.nonrandom(possible_results)
-    return possible_results[1].name
+---@param rsl_definition LuaRslDefinition
+---@param event EventData.on_script_trigger_effect
+local function check_condition(rsl_definition, event)
+    local condition_check_func = condition_check_functions[rsl_definition.condition_checker_func_name]
+    return condition_check_func(event)
 end
 
----@param mode RslSelectionMode
----@param results RslItems?
----@return string?
-local function call_selection(mode, results)
-    if not results then return end -- There's no possible results. Give up
-    local func = selection_funcs[mode]
-    if not func then error("Somehow the selection mode had an invalid value") end
-    return func(results)
+---@param rsl_definition LuaRslDefinition
+---@param event EventData.on_script_trigger_effect
+function selection_funcs.deterministic(rsl_definition, event)
+    return rsl_definition.possible_results[check_condition(rsl_definition, event)][1].name
 end
 
--- Inventory swapping functions
-------------------------
----@param rsl_definition RslDefinition
----@return string?
-local function select_result(rsl_definition)
-    local condition = rsl_definition.condition
+---@param rsl_definition LuaRslDefinition
+---@param event EventData.on_script_trigger_effect
+function selection_funcs.condition_random_unweighted(rsl_definition, event)
+    local check_result = check_condition(rsl_definition, event)
+    local possible_results = rsl_definition.possible_results[check_result]
+    return selection_funcs.select_one_result_over_n_unweighted(possible_results)
+end
 
-    if condition == true then
-        return call_selection(rsl_definition.selection_mode, rsl_definition.possible_results[true])
-    end
+---@param rsl_definition LuaRslDefinition
+---@param event EventData.on_script_trigger_effect
+function selection_funcs.condition_random_weighted(rsl_definition, event)
+    local check_result = check_condition(rsl_definition, event)
+    local possible_results = rsl_definition.possible_results[check_result]
+    return selection_funcs.weighted_choice(possible_results)
+end
 
-    local event = rsl_definition.event
-    if type(condition) == "table" then
-        local success, result = pcall(remote.call, condition.remote_mod, condition.remote_function, event)
-        if not success then
-            if type(result) == "string" then
-                log("Remote call errored. Continuing without a result. Err:\n"..result)
-            else
-                log("Remote call errored. Continuing without a result.")
-            end
-            return
-        end
-        local options_list = rsl_definition.possible_results[result]
-        return call_selection(rsl_definition.selection_mode, options_list)
-    end
-
-    --local options_list = rsl_definition.possible_results[success]
-    --return rsl_definition.selection_mode(options_list)
+---@param rsl_definition LuaRslDefinition
+---@param event EventData.on_script_trigger_effect
+local function select_result(rsl_definition, event)
+    return selection_funcs[rsl_definition.selector](rsl_definition, event)
 end
 
 return select_result

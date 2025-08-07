@@ -1,85 +1,17 @@
---- Defines the mode in which results are selected.
----@class ModeType
----@field random boolean
----@field conditional boolean
----@field weighted boolean
+---@class LuaRslDefinition
+---@field name string
+---@field original_item_name string
+---@field selector string
+---@field possible_results table
+---@field condition_checker_func_name string
 
 --- Represents a remote function call structure.
 ---@class RemoteCall
 ---@field remote_mod string The name of the mod exposing the function.
 ---@field remote_function string The name of the function to call.
 
---- Represents a possible result item with an optional weight.
----@class RslWeightedItem
----@field name string The name of the result item.
----@field weight? number The weight for weighted selection (optional).
-
---- Arguments for registering an RSL definition.
----@class RslArgs
----@field mode ModeType The mode settings for result selection.
----@field condition? RemoteCall The remote call used if the mode is conditional. If it's not conditional, it'll just use `true`.
----@field possible_results table<any, RslWeightedItem[]> The possible outcomes based on condition results.
-local args_model = {
-    mode = {random = false, conditional = false, weighted = false},
-    condition = nil,
-    possible_results = {
-        [true] = {
-            {name = "", weight = 1}
-        }
-    }
-}
 
 local registry = {}
-
----@param possible_results RslItems
----@return RslWeightedItems
-local function preprocess_weights(possible_results)
-    local cumulative_weight = 0
-    ---@type RslItems
-    local sorted_options = {}
-
-    -- Build sorted list of cumulative weights
-    for _, option in pairs(possible_results) do
-        if not option.weight then error("Chose to weight the random results, but results did not have weights", 3) end
-        cumulative_weight = cumulative_weight + option.weight--[[@as number]]
-        table.insert(sorted_options, { weight = cumulative_weight, name = option.name})
-    end
-
-    -- Ensure sorting is correct (ascending order)
-    table.sort(sorted_options, function(a, b)
-        return a.weight < b.weight
-    end)
-
-    ---@cast sorted_options RslWeightedItems
-    sorted_options.cumulative_weight = cumulative_weight
-    return sorted_options
-end
-
---- Do not allow a possible_results table to accept table indexes
---- We want them *accessible*. Maybe *you* can pass a table around as an index
---- but I do not trust the remote interface to keep the references the same across different passes
----@type table<type,true>
-local index_by_value_types = {
-    ["boolean"] = true,
-    ["number"] = true,
-    ["string"] = true,
-}
-
----@param result RslWeightedItem
-local function validate_result(result)
-    if type(result) ~= "table" then
-        error("Expected a result item table. Got a '"..type(result).."' instead", 3)
-    elseif type(result.name) ~= "string" then
-        error("Expected a string for the name of the result item. Got a '"..type(result.name).."' instead", 3)
-    elseif result.weight ~= nil and type(result.weight) ~= "number" then
-        error("Expected a number for the weight of the result item. Got a '"..type(result.weight).."' instead", 3)
-    end
-
-    local prototype = prototypes.item[result.name]
-    if not prototype then
-        error("The given item name, did not exist: "..result.name, 3)
-    end
-end
 
 --- Validates the given remote call parameters
 ---@param remote_call RemoteCall
@@ -98,91 +30,70 @@ local function validate_remote_call(remote_call)
     end
 end
 
----Register a new RSL definition remotely.
----@param item_name string The name of the item the will spoil.
----@param args RslArgs The arguments for the RSL definition.
-function registry.register_rsl_definition(item_name, args)
-    if not game then
-        return error("Runtime Spoilage Library has been updated and registering in on_load is no longer necessary, or valid.", 2)
-    end
-    local placeholder_name = item_name .. "-rsl-placeholder"
 
-    --- Complain about inane mode combinations
-    if args.mode.random == false and args.mode.weighted then
-        error("Random was set to false, and weighted true.. These are conflicting options.", 2)
-    end
 
-    -- Process the given results to make sure they are not malformed
-    local possible_results = args.possible_results
-    for key, results in pairs(possible_results) do
-        if not index_by_value_types[type(key)] then
-            error("The key to some of the possible results are impossible to re-index by. Prove your case if you disagree about '"..type(key).."' being unusable", 2)
+---Yes it's... not great. But Factorio serializes table indexes to strings.
+---And I don't want that. Moreover, this allows to only keep the minimal info needed.
+function registry.make_registry()
+    
+    local mod_data = prototypes.mod_data
+
+    for _, proto in pairs(mod_data) do
+        if proto.data_type == "rsl_definition" then
+
+            local rsl_definition = {
+                name = proto.name,
+                original_item_name = proto.data.original_item_name,
+                selector = proto.data.selector,
+                possible_results = {},
+                condition_checker_func_name = proto.data.condition_checker_func_name
+            }
+
+            if proto.data.selector == ("weighted_choice" or "select_one_result_over_n_unweighted") then
+                for key, value in pairs(proto.data.possible_results) do
+                    if key == "cumulative_weight" then rsl_definition.possible_results[key] = value
+                    else rsl_definition.possible_results[tonumber(key)] = value end
+                end
+            elseif proto.data.selector == ("condition_random_weighted" or "condition_random_unweighted") then
+                for condition, conditional_results in pairs(proto.data.possible_results) do
+                    local results_ = {}
+                    for key, value in pairs(conditional_results) do
+                        if key == "cumulative_weight" then results_[key] = value
+                        else results_[tonumber(key)] = value end
+                    end
+                    
+                    rsl_definition.possible_results[condition] = results_
+                end
+            elseif proto.data.selector == "deterministic" then
+                rsl_definition.possible_results = proto.data.possible_results
+            end
+            ---@cast proto LuaRslDefinition
+            storage.rsl_definitions[proto.name] = rsl_definition
         end
-        for _, result in pairs(results) do
-            validate_result(result)
-        end
     end
-
-    --- Selection mode selection
-    --- Also react to the mode by affecting results if need be
-    ---@type RslSelectionMode
-    local selection_mode
-    if not args.mode.random then
-        selection_mode = "nonrandom"
-    elseif args.mode.weighted then
-        selection_mode = "weighted_choice"
-        -- Preprocess all the results to allow for the weighted choice function to work properly
-        for key, results in pairs(possible_results) do
-            possible_results[key] = preprocess_weights(results)
-        end
-    else
-        selection_mode = "select_one_result_over_n_unweighted"
-    end
-
-    --- Condition evaluation
-    ---@type RemoteCall|true?
-    local condition = args.condition
-    if args.mode.conditional then
-        if type(condition) ~= "table" then
-            error("Set to conditional, and didn't provide a remote call.", 2)
-        end
-
-        validate_remote_call(condition)
-    else
-        condition = true
-        --- Limit possible results to `true` since the condition will always be true
-        possible_results = {
-            [true] = possible_results[true]
-        }
-    end
-
-    storage.rsl_definitions[placeholder_name] = {
-        name = placeholder_name,
-        possible_results = possible_results,
-        event = nil,
-        condition = condition,
-        selection_mode = selection_mode
-    }
 end
 
---FIXME: This example is out of date
-local registered_rsl_def_exemple = {
-    ["iron-plate-rsl-placeholder"] = 
-        {
----@diagnostic disable-next-line: undefined-global, no-unknown
-            selection_mode = function(item) return selection_funcs.weighted_choice(item) end,
-            name = "iron-plate-rsl-placeholder",
-            condition = true,
-            possible_results= {
-            [true] = {
-                cumulative_weight = 3,
-                {name = "iron-ore", cumulative_weight = 1},
-                {name = "copper-plate", cumulative_weight = 3}
-            },
-            [false] = {}
-        },
-        }
-    }
+registry.condition_check_functions = {}
+
+function registry.register_condition_check(name, func)
+    --- Register an external function that takes a single `event` argument
+    ---@param name string A unique name to register the function under
+    ---@param func function The actual function to store
+    register = function(name, func)
+        if type(name) ~= "string" then
+            error("First argument to register must be a string (function name)")
+        end
+        if type(func) ~= "function" then
+            error("Second argument to register must be a function")
+        end
+        if registry.condition_check_functions[name] then
+            log("[RSL] Warning: Overwriting previously registered function '" .. name .. "'")
+        end
+        registry.condition_check_functions[name] = func
+        log("[RSL] External function '" .. name .. "' registered successfully.")
+    end
+end
+
 
 return {
     registry = registry,
