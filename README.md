@@ -49,8 +49,8 @@ And here is an exemple you can copy paste and modify directly :
 
 
 ```lua
----@type rsl_definition_data
-local definition_data = {
+---@type rsl_registration
+local registration_data = {
         original_item_name = "name of the item that will spoil",
         original_item_spoil_ticks = --int,
         -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
@@ -102,8 +102,8 @@ and finally, here is a more advanced exemple :
 
 ```lua
 
----@type rsl_definition_data
-local definition_data = {
+---@type rsl_registration_data
+local registration_data = {
         original_item_name = "name of the item that will spoil",
         original_item_spoil_ticks = --int,
         -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
@@ -132,4 +132,13 @@ local definition_data = {
         },
 
     }
+
+    local my_rsl_registration = {
+    type = "mod-data",
+    name = "bob_is_blue",
+    data_type = "rsl_registration",
+    data = rsl_registration_data
+}
+
+data:extend{my_rsl_definition}
     ```
