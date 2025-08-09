@@ -72,7 +72,7 @@ local function validate_is_weighted(prototype_name, results, nested)
     local all_weighted = true
 
     if nested then
-        results = flatten_conditional_results(nested)
+        results = flatten_conditional_results(results)
     end
 
     for key, value in pairs(results) do
@@ -102,7 +102,7 @@ local function validate_rc_results(prototype_name, input_results)
     end
 
     for key, value in pairs(input_results) do
-        if type(key) ~= "string" or "int" or "bool" then
+        if type(key) ~= "string" and type(key) ~= "number" then
             error("validate_results: in prototype "..prototype_name..", key '" .. tostring(key) .. "' is not a string|int|bool.")
         end
         if type(value) ~= "table" then
@@ -126,7 +126,7 @@ local function validate_c_deterministic_results(prototype_name, input_results)
     end
 
     for key, value in pairs(input_results) do
-        if type(key) ~= "string" or "int" or "bool" then
+        if type(key) ~= "string" then
             error("validate_results: in prototype "..prototype_name..", key '" .. tostring(key) .. "' is not a string|int|bool.")
         end
         if type(value) ~= "string" then
@@ -227,6 +227,7 @@ local function make_rsl_definition(rsl_registration)
     if rsl_definition.data.conditional then
         validate_c_deterministic_results(prototype_name, rsl_definition.data.conditional_results)
         rsl_definition.data["selector"] = "deterministic"
+        rsl_definition.data["possible_results"] = rsl_definition.data.conditional_results
         data:extend{rsl_definition}
         return
     end
@@ -247,6 +248,7 @@ local function make_rsl_definition(rsl_registration)
 
 end
 
-for _, content in pairs(data.raw["mod-data"]) do
-    if content.data_type == "rsl_registration" then make_rsl_definition(content) end
+if data.raw["mod-data"] then for _, content in pairs(data.raw["mod-data"]) do
+    if content and content.data_type == "rsl_registration" then make_rsl_definition(content) end
+end
 end

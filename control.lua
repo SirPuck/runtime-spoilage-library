@@ -102,6 +102,7 @@ local function setup_storage()
     rsl_definitions = {}
     storage.rsl_definitions = rsl_definitions
     registry.make_registry()
+    registry.compile_functions()
 end
 
 local function advert()
@@ -114,5 +115,10 @@ script.on_init(function()
     setup_storage()
     advert()
 end)
-script.on_configuration_changed(setup_storage)
+script.on_configuration_changed(
+    setup_storage
+)
+script.on_load(
+    registry.compile_functions
+)
 

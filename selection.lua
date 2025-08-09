@@ -1,9 +1,8 @@
 local selection_funcs = {}
 local condition_check_functions = require("runtime_registry").registry.condition_check_functions
 
----@param rsl_definition LuaRslDefinition
-function selection_funcs.weighted_choice(rsl_definition)
-    local possible_results = rsl_definition.possible_results
+function selection_funcs.weighted_choice(possible_results)
+    local possible_results = possible_results
     if not possible_results then return nil end
 
     local r = math.random() * possible_results.cumulative_weight
@@ -35,13 +34,13 @@ end
 ---@param event EventData.on_script_trigger_effect
 local function check_condition(rsl_definition, event)
     local condition_check_func = condition_check_functions[rsl_definition.condition_checker_func_name]
-    return condition_check_func(event)
+    return tostring(condition_check_func(event))
 end
 
 ---@param rsl_definition LuaRslDefinition
 ---@param event EventData.on_script_trigger_effect
 function selection_funcs.deterministic(rsl_definition, event)
-    return rsl_definition.possible_results[check_condition(rsl_definition, event)][1].name
+    return rsl_definition.possible_results[check_condition(rsl_definition, event)]
 end
 
 ---@param rsl_definition LuaRslDefinition
@@ -56,7 +55,7 @@ end
 ---@param event EventData.on_script_trigger_effect
 function selection_funcs.condition_random_weighted(rsl_definition, event)
     local check_result = check_condition(rsl_definition, event)
-    local possible_results = rsl_definition.possible_results[check_result]
+    local possible_results = rsl_definition.possible_results[tostring(check_result)]
     return selection_funcs.weighted_choice(possible_results)
 end
 

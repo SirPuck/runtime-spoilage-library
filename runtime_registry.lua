@@ -12,6 +12,7 @@
 
 
 local registry = {}
+registry.condition_check_functions = {}
 
 --- Validates the given remote call parameters
 ---@param remote_call RemoteCall
@@ -30,7 +31,34 @@ local function validate_remote_call(remote_call)
     end
 end
 
+local function compile_function_from_string(name, code_str)
+  if type(code_str) ~= "string" then
+    error("["..name.."] conditional_func_check must be a string, got "..type(code_str))
+  end
 
+  -- Prefer expression form: "function(event) ... end"
+  -- Wrap with `return (...)` so the chunk evaluates to the function value.
+  local wrapped = "return (" .. code_str .. ")"
+
+  local chunk, err = load(wrapped, name .. "::<rsl-func>", "t", SAFE_ENV)
+  if not chunk then
+    -- As a fallback, try raw (maybe author wrote "return function(event) ... end")
+    chunk, err = load(code_str, name .. "::<rsl-func>", "t", SAFE_ENV)
+    if not chunk then
+      error("["..name.."] failed to compile conditional_func_check: "..tostring(err))
+    end
+  end
+
+  local ok, fn_or_val = pcall(chunk)
+  if not ok then
+    error("["..name.."] runtime error evaluating conditional_func_check: "..tostring(fn_or_val))
+  end
+  if type(fn_or_val) ~= "function" then
+    error("["..name.."] conditional_func_check did not evaluate to a function")
+  end
+
+  registry.condition_check_functions[name] =  fn_or_val
+end
 
 ---Yes it's... not great. But Factorio serializes table indexes to strings.
 ---And I don't want that. Moreover, this allows to only keep the minimal info needed.
@@ -46,7 +74,8 @@ function registry.make_registry()
                 original_item_name = proto.data.original_item_name,
                 selector = proto.data.selector,
                 possible_results = {},
-                condition_checker_func_name = proto.data.condition_checker_func_name
+                condition_checker_func_name = proto.data.condition_checker_func_name or nil,
+                condition_checker_func = proto.data.condition_checker_func or nil
             }
 
             if proto.data.selector == ("weighted_choice" or "select_one_result_over_n_unweighted") then
@@ -73,9 +102,17 @@ function registry.make_registry()
     end
 end
 
-registry.condition_check_functions = {}
+function registry.compile_functions()
+    for _, definition in pairs(storage.rsl_definitions) do
+        if definition.condition_checker_func then
+            compile_function_from_string(definition.condition_checker_func_name, definition.condition_checker_func)
+        end
+    end
+end
 
-function registry.register_condition_check(name, func)
+
+
+--[[ function registry.register_condition_check(name, func)
     --- Register an external function that takes a single `event` argument
     ---@param name string A unique name to register the function under
     ---@param func function The actual function to store
@@ -93,7 +130,7 @@ function registry.register_condition_check(name, func)
         log("[RSL] External function '" .. name .. "' registered successfully.")
     end
 end
-
+ ]]
 
 return {
     registry = registry,

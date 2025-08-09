@@ -32,6 +32,7 @@ local typical_rsl_registration = {
         random = "true | false",
         conditional = "true | false",
         condition_checker_func_name = "function name",
+        condition_checker_func = "function as string",
         random_results = {},
         conditional_random_results = {},
         conditional_results = {}
