@@ -47,7 +47,7 @@ local defined_inventories = {
 }
 
 ---@param event EventData.on_script_trigger_effect
----@param rsl_definition LuaRslDefinition
+---@param rsl_definition RtRslDefinition
 local function swap_item(event, rsl_definition)
 
     local result = select_result(rsl_definition, event)

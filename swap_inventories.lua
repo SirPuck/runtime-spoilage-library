@@ -12,7 +12,7 @@ end
 
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_item_in_character_inventory(result, entity, rsl_definition, quality
 )
@@ -37,7 +37,7 @@ function swap_funcs.hotswap_item_in_character_inventory(result, entity, rsl_defi
 end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_belt(result, entity, rsl_definition)
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
@@ -53,7 +53,7 @@ function swap_funcs.hotswap_in_belt(result, entity, rsl_definition)
 end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_underground_belt(result, entity, rsl_definition)
     local placeholder_name = rsl_definition.name
@@ -87,7 +87,7 @@ local function _hotswap_in_splitter_lines(lines, placeholder, result)
 end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition the name of the placeholder item.
 --- @return nil
 function swap_funcs.hotswap_in_splitter(result, entity, rsl_definition)
     local placeholder_name = rsl_definition.name
@@ -143,7 +143,7 @@ end
 
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_machine(result, entity, rsl_definition, quality)
@@ -177,7 +177,7 @@ end
 
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_generic_inventory(result, entity, rsl_definition, inventory_definition, quality)
@@ -204,7 +204,7 @@ end
 --- If the output is full, the spoiling item will just be deleted
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_boiler_inventory(result, entity, rsl_definition, quality)
@@ -228,7 +228,7 @@ end
 
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_lab_inventory(result, entity, rsl_definition, quality)
@@ -252,7 +252,7 @@ end
 --- Mining drills do not have an inventory, they have an internal buffer that is not accessible
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_mining_drill(result, entity, rsl_definition, quality)
@@ -267,7 +267,7 @@ end
 
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_furnace(result, entity, rsl_definition, quality)
@@ -298,7 +298,7 @@ end
 
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_logistic_inventory(result, entity, rsl_definition, quality)
@@ -320,7 +320,7 @@ end
 
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_roboport(result, entity, rsl_definition, quality)
@@ -342,7 +342,7 @@ end
 
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_agricultural_tower(result, entity, rsl_definition, quality)
@@ -364,7 +364,7 @@ end
 
 --- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param quality string
 --- @return nil
 function swap_funcs.hotswap_in_spider(result, entity, rsl_definition, quality)
@@ -386,7 +386,7 @@ end
 
 --- @param result string | nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 --- @param inventory_definition defines.inventory.car_trunk|defines.inventory.cargo_wagon|defines.inventory.chest|defines.inventory.hub_main|defines.inventory.rocket_silo_rocket
 function swap_funcs.hotswap_in_generic_inventory_in_place(result, entity, rsl_definition, inventory_definition)
     local placeholder_name = rsl_definition.name
@@ -414,7 +414,7 @@ end
 
 --- @param result string | nil
 --- @param event EventData.on_script_trigger_effect
---- @param rsl_definition LuaRslDefinition
+--- @param rsl_definition RtRslDefinition
 function swap_funcs.hotswap_in_position(result, event, rsl_definition)
     local surface = game.surfaces[event.surface_index]
     local entity = surface.find_entities_filtered(

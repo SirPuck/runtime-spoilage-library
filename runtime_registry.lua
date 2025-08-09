@@ -1,16 +1,10 @@
----@class LuaRslDefinition
+---@class RtRslDefinition
 ---@field name string
 ---@field original_item_name string
 ---@field selector string
 ---@field possible_results table
 ---@field condition_checker_func_name string
 ---@field condition_checker_func string
-
---- Represents a remote function call structure.
----@class RemoteCall
----@field remote_mod string The name of the mod exposing the function.
----@field remote_function string The name of the function to call.
-
 
 local registry = {}
 registry.condition_check_functions = {}
@@ -80,7 +74,6 @@ function registry.make_registry()
             elseif proto.data.selector == "deterministic" then
                 rsl_definition.possible_results = proto.data.possible_results
             end
-            ---@cast proto LuaRslDefinition
             storage.rsl_definitions[proto.name] = rsl_definition
         end
     end
