@@ -28,7 +28,7 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 
 ---@alias RslRandomResults RslRandomResult[] Example: {{name="iron-plate"}, {name="copper-plate"}} or {{name="iron-plate", weight = 1}, {name="copper-plate", weight = 3}}
 ---@alias RslConditionalRandomResults table<RslConditionResult, RslRandomResults> Example: { ["day"] = {{name="ice", weight=10}, {name = "stone", weight=1}} }
----@alias RslConditionalResults table<RslConditionResult, {name: RslItemName}> Example: { ["night"] = {name="sunflower"} }
+---@alias RslConditionalResults table<RslConditionResult, {name: RslItemName}> Example: { ["night"] = "sunflower"
 
 ---@class rsl_definition_data
 ---@field original_item_name string The name of the item that will spoil.
