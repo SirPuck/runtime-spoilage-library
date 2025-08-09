@@ -40,6 +40,7 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 ---@field random boolean If true, spoilage is chosen randomly.
 ---@field conditional boolean If true, spoilage depends on a condition function.
 ---@field condition_checker_func_name? string Name of the condition function used.
+---@field condition_checker_func? string the function to check the condition
 ---@field random_results? RslRandomResults
 ---@field conditional_random_results? RslConditionalRandomResults
 ---@field conditional_results? RslConditionalResults
