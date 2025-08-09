@@ -16,6 +16,7 @@ If you do that, and in the case where RSL can't access the inventory, the script
 How to use RSL :
 
 Simply add a RSL definition to your mod data.lua. You can copy paste the following documentation snippet in your code in order to get type hints.
+Please note that "original_item_name" must refer to an item that spoils. RSL won't transform your item into a spoilable item, you need to do this yourself.
 
 ```lua
 ---@alias RslItemName string
@@ -60,7 +61,6 @@ local definition_data = {
         additional_trigger = --? trigger,
         random = --true | false,
         conditional = --true | false,
-        condition_checker_func_name = "function name",
         --- Only one of the following 3 tables is needed
         random_results = {},
         conditional_random_results = {},
@@ -97,36 +97,38 @@ local my_rsl_registration = {
 
 data:extend{my_rsl_definition}
 ```
-
-If you use the "conditional" mode, you will need to register a function with RSL's remote interface.
-This is an advanced feature that is not required by any means if you aren't using the "conditional" option.
+and finally, here is a more advanced exemple : 
 
 ```lua
-remote.call("rsl_registry", "register_condition_check", "function_name", function(event)
-    -- Your condition logic here
-    return --check result, string... MUST be a string
-end)
 
-```
+---@type rsl_definition_data
+local definition_data = {
+        original_item_name = "name of the item that will spoil",
+        original_item_spoil_ticks = --int,
+        -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
+        -- By default, RSL will set this field afterwards so the even only triggers ONCE per item stack.
+        -- Setting an arbitrary number here WILL hinder performance.
+        items_per_trigger = --? int or nil,
+        fallback_spoilage = --? an item name or nil,
+        loop_spoil_safe_mode = --true or false, if true, the placeholder will spoil into itself if it cannot be replaced by RSL, if false, it will simply disappear. Defaults to true if not specified.,
+        additional_trigger = --? trigger,
+        random = --true | false,
+        conditional = --true | false,
+        condition_checker_func_name = "is_in_iron_chest",
+        condition_checker_func = [[
+        function(event)
+          local e = event.source_entity
+          return e and e.valid and e.name == "iron-chest"
+        end
+      ]],
+        conditional_random_results = {
+            ["true"] = {
+                {name = "iron-ore"}, {name="copper-cable"}
+            },
+            ["falsetrue"] = {
+                {name = "copper-ore"}, {name="stone"}
+            }
+        },
 
-you also need to register these functions on various states :
-- on_init
-- on_configuration_changed
-- on_load
-
-here is a concrete exemple :
-```lua
-local function register_my_condition()
-    if remote.interfaces["rsl_registry"] then
-        remote.call("rsl_registry", "register_condition_check", "function_name", function(event)
-            --do stuff
-            return --string
-        end)
-    end
-end
-
-script.on_init(register_my_condition)
-script.on_configuration_changed(register_my_condition)
-script.on_load(register_my_condition)
-
-```
+    }
+    ```

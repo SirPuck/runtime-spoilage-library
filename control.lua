@@ -85,19 +85,6 @@ end
 
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
----@class RslStorage
----@field rsl_definitions table<string,LuaRslDefinition>
-storage = storage
-
----Will set up the storage for after init or configuration changed.
----Clears the registry because if the mods change or a startup setting changed
----The registry is likely to not be valid anymore, so just force everyone to re-register
----
----This is similar to what was already being done, but ***NOT ABUSING ON_LOAD!***
----`on_load` has a very limit use case. Setting things up in it is not one of them!
----
----This also means that mods *have* to require us as a dependency instead of just ignoring that entirely.
----Because if they run their configuration changed before ours, we'll just clear their registrations.
 local function setup_storage()
     rsl_definitions = {}
     storage.rsl_definitions = rsl_definitions

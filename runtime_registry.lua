@@ -4,6 +4,7 @@
 ---@field selector string
 ---@field possible_results table
 ---@field condition_checker_func_name string
+---@field condition_checker_func string
 
 --- Represents a remote function call structure.
 ---@class RemoteCall
@@ -14,23 +15,6 @@
 local registry = {}
 registry.condition_check_functions = {}
 
---- Validates the given remote call parameters
----@param remote_call RemoteCall
-local function validate_remote_call(remote_call)
-    if type(remote_call.remote_function) ~= "string" then
-        error("Expected a string for the remote_function field. Got a '"..type(remote_call.remote_function).."' instead", 3)
-    elseif type(remote_call.remote_mod) ~= "string" then
-        error("Expected a string for the remote_mod field. Got a '"..type(remote_call.remote_mod).."' instead", 3)
-    end
-
-    local interface = remote.interfaces[remote_call.remote_mod]
-    if not interface then
-        error("Remote call's interface did not exist.", 3)
-    elseif not interface[remote_call.remote_function] then
-        error("Remote call's function did not exist in given interface.", 3)
-    end
-end
-
 local function compile_function_from_string(name, code_str)
   if type(code_str) ~= "string" then
     error("["..name.."] conditional_func_check must be a string, got "..type(code_str))
@@ -40,10 +24,10 @@ local function compile_function_from_string(name, code_str)
   -- Wrap with `return (...)` so the chunk evaluates to the function value.
   local wrapped = "return (" .. code_str .. ")"
 
-  local chunk, err = load(wrapped, name .. "::<rsl-func>", "t", SAFE_ENV)
+  local chunk, err = load(wrapped, name .. "::<rsl-func>", "t", _ENV)
   if not chunk then
     -- As a fallback, try raw (maybe author wrote "return function(event) ... end")
-    chunk, err = load(code_str, name .. "::<rsl-func>", "t", SAFE_ENV)
+    chunk, err = load(code_str, name .. "::<rsl-func>", "t", _ENV)
     if not chunk then
       error("["..name.."] failed to compile conditional_func_check: "..tostring(err))
     end
@@ -109,28 +93,6 @@ function registry.compile_functions()
         end
     end
 end
-
-
-
---[[ function registry.register_condition_check(name, func)
-    --- Register an external function that takes a single `event` argument
-    ---@param name string A unique name to register the function under
-    ---@param func function The actual function to store
-    register = function(name, func)
-        if type(name) ~= "string" then
-            error("First argument to register must be a string (function name)")
-        end
-        if type(func) ~= "function" then
-            error("Second argument to register must be a function")
-        end
-        if registry.condition_check_functions[name] then
-            log("[RSL] Warning: Overwriting previously registered function '" .. name .. "'")
-        end
-        registry.condition_check_functions[name] = func
-        log("[RSL] External function '" .. name .. "' registered successfully.")
-    end
-end
- ]]
 
 return {
     registry = registry,

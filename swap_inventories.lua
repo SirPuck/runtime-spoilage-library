@@ -1,15 +1,4 @@
-local select_result = require("selection")
 local swap_funcs = {}
-
-
---[[ --- Represents the structure of an RSL definition.
----@class RslDefinition
----@field selection_mode RslSelectionMode Function to determine selection logic.
----@field name string The unique name of the RSL definition.
----@field condition true|RemoteCall Condition to trigger the RSL result; can be a boolean or a function.
----@field possible_results table<any, RslItems|RslWeightedItems?> A table mapping outcomes (true/false) to lists of result items.
----@field event? EventData.on_script_trigger_effect Just for smuggling the event to the remote function
- ]]
 
 ---@param stack LuaItemStack
 ---@param result string|nil

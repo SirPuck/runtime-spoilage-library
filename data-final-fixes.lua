@@ -16,14 +16,6 @@
 ---@field selector string Name of the selector function.
 ---@field possible_results table List of possible random spoilage results.
 
-
-local modes = {
-    [1] = "random",
-    [2] = "random weighted",
-    [3] = "conditional random",
-    [4] = "conditional deterministic"
-}
-
 local function preprocess_weights(possible_results)
     local cumulative_weight = 0
     local sorted_options = {}
@@ -43,15 +35,6 @@ local function preprocess_weights(possible_results)
     return sorted_options
 end
 
-
-local conditional_random_results = {
-    ["cyour condition result 1"] = {
-        {name = "iron-plate", weight = 1}, {name = "copper-plate", weight = 1}
-    },
-    ["your condition result 2"] = {
-        {name = "iron-plate", weight = 1}, {name = "copper-plate", weight = 1}
-    }
-}
 
 local function flatten_conditional_results(nested)
     local flat = {}
@@ -181,7 +164,7 @@ local function make_rsl_definition(rsl_registration)
             },
         }
     }
-    original_item.spoil_ticks = 10
+
     original_item.spoil_result = placeholder.name
 
     if rsl_registration.data.loop_spoil_safe_mode or rsl_registration.data.loop_spoil_safe_mode == nil then
@@ -197,9 +180,6 @@ local function make_rsl_definition(rsl_registration)
     rsl_definition.data_type = "rsl_definition"
 
     local prototype_name = rsl_registration.name
-
-
-
 
     rsl_definition.data["possible_results"] = {}
 
@@ -244,11 +224,10 @@ local function make_rsl_definition(rsl_registration)
         data:extend{rsl_definition}
     end
 
-    
 
 end
 
 if data.raw["mod-data"] then for _, content in pairs(data.raw["mod-data"]) do
-    if content and content.data_type == "rsl_registration" then make_rsl_definition(content) end
-end
+        if content and content.data_type == "rsl_registration" then make_rsl_definition(content) end
+    end
 end
