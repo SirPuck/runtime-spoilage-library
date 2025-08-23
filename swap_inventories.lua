@@ -1,18 +1,4 @@
-local select_result = require("selection")
 local swap_funcs = {}
-
----@class RslItems : {[number]:RslWeightedItem}
----@class RslWeightedItems : RslItems
----@field cumulative_weight number
-
---- Represents the structure of an RSL definition.
----@class RslDefinition
----@field selection_mode RslSelectionMode Function to determine selection logic.
----@field name string The unique name of the RSL definition.
----@field condition true|RemoteCall Condition to trigger the RSL result; can be a boolean or a function.
----@field possible_results table<any, RslItems|RslWeightedItems?> A table mapping outcomes (true/false) to lists of result items.
----@field event? EventData.on_script_trigger_effect Just for smuggling the event to the remote function
-
 
 ---@param stack LuaItemStack
 ---@param result string|nil
@@ -26,9 +12,10 @@ end
 
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition the name of the placeholder item.
 --- @return nil
-function swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition, quality)
+function swap_funcs.hotswap_item_in_character_inventory(result, entity, rsl_definition, quality
+)
     local inventory = entity.get_main_inventory()
     local placeholder_name = rsl_definition.name
     if inventory then
@@ -36,7 +23,6 @@ function swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition, 
 
         local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
         if removed > 0 then
-            local result = select_result(rsl_definition)
             if result ~= nil then
                 inventory.insert({name=result, count=removed, quality=quality})
             end
@@ -45,23 +31,21 @@ function swap_funcs.hotswap_item_in_character_inventory(entity, rsl_definition, 
 
         ::continue::
         if entity.cursor_stack and entity.cursor_stack.valid_for_read and entity.cursor_stack.name == placeholder_name then
-            local result = select_result(rsl_definition)
             swap_funcs.set_or_nil_stack(entity.cursor_stack, result)
         end
     end
 end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition the name of the placeholder item.
 --- @return nil
-function swap_funcs.hotswap_in_belt(entity, rsl_definition)
+function swap_funcs.hotswap_in_belt(result, entity, rsl_definition)
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
     local placeholder_name = rsl_definition.name
     for _, line in pairs(transport_lines) do
         for i = 1, #line do
             local success, stack = pcall(function() return line[i] end)
             if stack.valid_for_read and stack.name == placeholder_name then
-                local result = select_result(rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
             end
         end
@@ -69,9 +53,9 @@ function swap_funcs.hotswap_in_belt(entity, rsl_definition)
 end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition the name of the placeholder item.
 --- @return nil
-function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
+function swap_funcs.hotswap_in_underground_belt(result, entity, rsl_definition)
     local placeholder_name = rsl_definition.name
     
     for i = 1, entity.get_max_transport_line_index() do
@@ -80,7 +64,6 @@ function swap_funcs.hotswap_in_underground_belt(entity, rsl_definition)
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder_name then
-                local result = select_result(rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
                 return
             end
@@ -90,13 +73,12 @@ end
 
 ---@param lines LuaTransportLine[]
 ---@param placeholder string
----@param rsl_definition RslDefinition
-local function _hotswap_in_splitter_lines(lines, placeholder, rsl_definition)
+---@param result string
+local function _hotswap_in_splitter_lines(lines, placeholder, result)
     for _, line in pairs(lines) do
         for i = 1, #line do
             local stack = line[i]
             if stack.valid_for_read and stack.name == placeholder then
-                local result = select_result(rsl_definition)
                 swap_funcs.set_or_nil_stack(stack, result)
                 return
             end
@@ -105,9 +87,9 @@ local function _hotswap_in_splitter_lines(lines, placeholder, rsl_definition)
 end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition the name of the placeholder item.
 --- @return nil
-function swap_funcs.hotswap_in_splitter(entity, rsl_definition)
+function swap_funcs.hotswap_in_splitter(result, entity, rsl_definition)
     local placeholder_name = rsl_definition.name
     local transport_lines = {entity.get_transport_line(1), entity.get_transport_line(2)}
 
@@ -116,14 +98,14 @@ function swap_funcs.hotswap_in_splitter(entity, rsl_definition)
             goto continue
         end
         for i = 1, #line.input_lines do
-            _hotswap_in_splitter_lines(line.input_lines, placeholder_name, rsl_definition)
+            _hotswap_in_splitter_lines(line.input_lines, placeholder_name, result)
         end
         ::continue::
         if #line.output_lines == 0 then
             goto next_iter
         end
         for i = 1, #line.output_lines do
-            _hotswap_in_splitter_lines(line.output_lines, placeholder_name, rsl_definition)
+            _hotswap_in_splitter_lines(line.output_lines, placeholder_name, result)
         end
         ::next_iter::
     end
@@ -131,49 +113,51 @@ end
 
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param result string
 --- @return nil
-function swap_funcs.hotswap_in_inserter(entity, rsl_definition)
+function swap_funcs.hotswap_in_inserter(result, entity)
     if entity.held_stack.valid_for_read then
-        local result = select_result(rsl_definition)
         swap_funcs.set_or_nil_stack(entity.held_stack, result)
     end
 end
 
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
-function swap_funcs.hotswap_in_bot(entity, rsl_definition)
+function swap_funcs.hotswap_in_bot(result, entity)
     local stack = entity.get_inventory(defines.inventory.robot_cargo)[1]
     if stack.valid_for_read then
-        local result = select_result(rsl_definition)
         swap_funcs.set_or_nil_stack(stack, result)
     end
 end
 
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param result string
 --- @return nil
-function swap_funcs.hotswap_in_cargo_pod(entity, rsl_definition)
+function swap_funcs.hotswap_in_cargo_pod(result, entity)
     local stack = entity.get_inventory(defines.inventory.cargo_unit)[1]
     if stack.valid_for_read then
-        local result = select_result(rsl_definition)
         swap_funcs.set_or_nil_stack(stack, result)
     end
 end
 
-
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_machine(entity, rsl_definition, quality)
+function swap_funcs.hotswap_in_machine(result, entity, rsl_definition, quality)
     local placeholder_name = rsl_definition.name
-    local input = entity.get_inventory(defines.inventory.assembling_machine_input)
-    local output = entity.get_inventory(defines.inventory.assembling_machine_output)
+    local input = entity.get_inventory(defines.inventory.crafter_input)
+    local output = entity.get_inventory(defines.inventory.crafter_output)
     local dump = entity.get_inventory(defines.inventory.assembling_machine_dump)
-    local trash = entity.get_inventory(defines.inventory.assembling_machine_trash)
-    local modules = entity.get_inventory(defines.inventory.assembling_machine_modules)
+    local trash = entity.get_inventory(defines.inventory.crafter_trash)
+    local modules = entity.get_inventory(defines.inventory.crafter_modules)
     local inventories = {input, output, dump, trash}
+    if entity.name == "foundry" then
+        local lol = "lol"
+    end
+    
     if modules then
         table.insert(inventories, modules)
     end
@@ -182,28 +166,27 @@ function swap_funcs.hotswap_in_machine(entity, rsl_definition, quality)
         if item_count > 0 then
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
-                local result = select_result(rsl_definition)
                 if result ~= nil and trash ~= nil then
                     trash.insert({name=result, count=removed, quality=quality})
                 end
                 return
             end
-        end     
+        end
     end
 end
 
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
---- @param inventory_definition defines.inventory
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_generic_inventory(entity, rsl_definition, inventory_definition, quality)
+function swap_funcs.hotswap_in_generic_inventory(result, entity, rsl_definition, inventory_definition, quality)
     local placeholder_name = rsl_definition.name
     if inventory_definition then
         local inventory = entity.get_inventory(inventory_definition)
         if inventory then
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
-                    local result = select_result(rsl_definition)
                     if result ~= nil then
                         inventory.insert({name=result, count=removed, quality=quality})
                     end
@@ -219,10 +202,12 @@ end
 
 
 --- If the output is full, the spoiling item will just be deleted
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition, quality)
+function swap_funcs.hotswap_in_boiler_inventory(result, entity, rsl_definition, quality)
     local placeholder_name = rsl_definition.name
     local input_inventory = entity.get_inventory(defines.inventory.fuel)
     local output_inventory = entity.get_inventory(defines.inventory.burnt_result)
@@ -231,7 +216,6 @@ function swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition, quality)
 
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
-                local result = select_result(rsl_definition)
                 if result ~= nil then
                     inventory.insert({name=result, count=removed, quality=quality})
                 end
@@ -242,19 +226,20 @@ function swap_funcs.hotswap_in_boiler_inventory(entity, rsl_definition, quality)
     end
 end
 
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_lab_inventory(entity, rsl_definition, quality)
+function swap_funcs.hotswap_in_lab_inventory(result, entity, rsl_definition, quality)
     local placeholder_name = rsl_definition.name
     --local inventory = entity.get_inventory(defines.inventory.lab_input)
-    local trash_inventory = entity.get_inventory(defines.inventory.assembling_machine_trash)
+    local trash_inventory = entity.get_inventory(defines.inventory.crafter_trash)
     -- Currently, trash_inventory_size does nothing for labs so there is only one slot available. Excess spoiled items will be deleted. 
     if trash_inventory then
 
         local removed = trash_inventory.remove({name=placeholder_name, count=9999999, quality=quality})
         if removed > 0 then
-            local result = select_result(rsl_definition)
             if result ~= nil then
                 trash_inventory.insert({name=result, count=removed, quality=quality})
             end
@@ -265,10 +250,12 @@ function swap_funcs.hotswap_in_lab_inventory(entity, rsl_definition, quality)
 end
 
 --- Mining drills do not have an inventory, they have an internal buffer that is not accessible
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_mining_drill(entity, rsl_definition)
+function swap_funcs.hotswap_in_mining_drill(result, entity, rsl_definition, quality)
     -- The current behavior of mining drills don't allow runtime item replacement. So, if the modder
     -- wants to add a spoilable ore, either a fallback is needed for this item, either placeholder_spoil_into_self
     -- must be set to true
@@ -278,14 +265,16 @@ function swap_funcs.hotswap_in_mining_drill(entity, rsl_definition)
 end
 
 
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_furnace(entity, rsl_definition, quality)
+function swap_funcs.hotswap_in_furnace(result, entity, rsl_definition, quality)
     local placeholder_name = rsl_definition.name
-    local inventory_result = entity.get_inventory(defines.inventory.furnace_result)
-    local inventory_input = entity.get_inventory(defines.inventory.furnace_source)
-    local modules = entity.get_inventory(defines.inventory.furnace_modules)
+    local inventory_result = entity.get_inventory(defines.inventory.crafter_output)
+    local inventory_input = entity.get_inventory(defines.inventory.crafter_input)
+    local modules = entity.get_inventory(defines.inventory.crafter_modules)
     local inventories = {inventory_input, inventory_result}
 
     if modules then
@@ -297,7 +286,6 @@ function swap_funcs.hotswap_in_furnace(entity, rsl_definition, quality)
 
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
-                local result = select_result(rsl_definition)
                 if result ~= nil then
                     inventory.insert({name=result, count=removed, quality=quality})
                 end
@@ -308,18 +296,18 @@ function swap_funcs.hotswap_in_furnace(entity, rsl_definition, quality)
     end
 end
 
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition, quality)
+function swap_funcs.hotswap_in_logistic_inventory(result, entity, rsl_definition, quality)
     local placeholder_name = rsl_definition.name
     local inventories = {entity.get_inventory(defines.inventory.chest), entity.get_inventory(defines.inventory.logistic_container_trash)}
     for _, inventory in pairs(inventories) do
         if inventory then
-
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
-                local result = select_result(rsl_definition)
                 if result ~= nil then
                     inventory.insert({name=result, count=removed, quality=quality})
                 end
@@ -330,18 +318,18 @@ function swap_funcs.hotswap_in_logistic_inventory(entity, rsl_definition, qualit
     end
 end
 
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_roboport(entity, rsl_definition, quality)
+function swap_funcs.hotswap_in_roboport(result, entity, rsl_definition, quality)
     local placeholder_name = rsl_definition.name
     local inventories = {entity.get_inventory(defines.inventory.roboport_robot), entity.get_inventory(defines.inventory.roboport_material)}
     for _, inventory in pairs(inventories) do
         if inventory then
-
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
-                local result = select_result(rsl_definition)
                 if result ~= nil then
                     inventory.insert({name=result, count=removed, quality=quality})
                 end
@@ -352,18 +340,18 @@ function swap_funcs.hotswap_in_roboport(entity, rsl_definition, quality)
     end
 end
 
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_agricultural_tower(entity, rsl_definition, quality)
+function swap_funcs.hotswap_in_agricultural_tower(result, entity, rsl_definition, quality)
     local placeholder_name = rsl_definition.name
-    local inventories = {entity.get_inventory(defines.inventory.assembling_machine_input), entity.get_inventory(defines.inventory.assembling_machine_output)}
+    local inventories = {entity.get_inventory(defines.inventory.crafter_input), entity.get_inventory(defines.inventory.crafter_output)}
     for _, inventory in pairs(inventories) do
         if inventory then
-
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
-                local result = select_result(rsl_definition)
                 if result ~= nil then
                     inventory.insert({name=result, count=removed, quality=quality})
                 end
@@ -374,34 +362,33 @@ function swap_funcs.hotswap_in_agricultural_tower(entity, rsl_definition, qualit
     end
 end
 
+--- @param result string|nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
+--- @param quality string
 --- @return nil
-function swap_funcs.hotswap_in_spider(entity, rsl_definition, quality)
+function swap_funcs.hotswap_in_spider(result, entity, rsl_definition, quality)
     local placeholder_name = rsl_definition.name
     local inventories = {entity.get_inventory(defines.inventory.spider_ammo), entity.get_inventory(defines.inventory.spider_trash), entity.get_inventory(defines.inventory.spider_trunk)}
     for _, inventory in pairs(inventories) do
         if inventory then
-
-                local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
-                if removed > 0 then
-                    local result = select_result(rsl_definition)
-                    if result ~= nil then
-                        inventory.insert({name=result, count=removed, quality=quality})
-                    end
-                    return
+            local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
+            if removed > 0 then
+                if result ~= nil then
+                    inventory.insert({name=result, count=removed, quality=quality})
                 end
-
+                return
+            end
         end
     end
 end
 
 
-
+--- @param result string | nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
+--- @param rsl_definition RtRslDefinition
 --- @param inventory_definition defines.inventory.car_trunk|defines.inventory.cargo_wagon|defines.inventory.chest|defines.inventory.hub_main|defines.inventory.rocket_silo_rocket
-function swap_funcs.hotswap_in_generic_inventory_in_place(entity, rsl_definition, inventory_definition)
+function swap_funcs.hotswap_in_generic_inventory_in_place(result, entity, rsl_definition, inventory_definition)
     local placeholder_name = rsl_definition.name
     local inventory = entity.get_inventory(inventory_definition)
     if inventory then
@@ -410,7 +397,6 @@ function swap_funcs.hotswap_in_generic_inventory_in_place(entity, rsl_definition
             for i = 1, #inventory do
                 local stack = inventory[i]
                 if stack.valid_for_read and stack.name == placeholder_name then
-                    local result = select_result(rsl_definition)
                     swap_funcs.set_or_nil_stack(stack, result)
                     return
                 end
@@ -419,16 +405,17 @@ function swap_funcs.hotswap_in_generic_inventory_in_place(entity, rsl_definition
     end
 end
 
+--- @param result string | nil
 --- @param entity LuaEntity (we assume source_entity and target_entity are the same).
---- @param rsl_definition RslDefinition the name of the placeholder item.
 --- @return nil
-function swap_funcs.hotswap_on_ground(entity, rsl_definition)
-    return swap_funcs.set_or_nil_stack(entity.stack, select_result(rsl_definition) or nil)
+function swap_funcs.hotswap_on_ground(result, entity)
+    return swap_funcs.set_or_nil_stack(entity.stack, result or nil)
 end
 
+--- @param result string | nil
 --- @param event EventData.on_script_trigger_effect
---- @param rsl_definition RslDefinition the name of the placeholder item.
-function swap_funcs.hotswap_in_position(event, rsl_definition)
+--- @param rsl_definition RtRslDefinition
+function swap_funcs.hotswap_in_position(result, event, rsl_definition)
     local surface = game.surfaces[event.surface_index]
     local entity = surface.find_entities_filtered(
         {
@@ -438,7 +425,7 @@ function swap_funcs.hotswap_in_position(event, rsl_definition)
         }
     )
     if entity and entity[1] and entity[1].stack.name == rsl_definition.name then
-        swap_funcs.set_or_nil_stack(entity[1].stack, select_result(rsl_definition) or nil)
+        swap_funcs.set_or_nil_stack(entity[1].stack, result or nil)
     end
 end
 
