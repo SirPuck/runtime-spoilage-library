@@ -5,204 +5,140 @@ RSL, for Runtime Spoilage Library, is a set of tools meant to be as straightforw
 For now, RSL allows you to define a spoilable item, and how and by what it should be replaced.
 The goal of RSL is, at first, to allow you to specify multiple possible outcomes for a spoilable item.
 
-You will need to use 2 functions : 
-- register_spoilable_item : At data stage, this function allows you to pass an item for preprocessing and registration.
-DO NOT data:extend the item yourself ! RSL will do it for you because it needs to modify your item to make it bend to its rules.
-
-- registry_rsl_definition : accessible via remote interface, this allows you to build a set of rules to define how your item should spoil.
-There are many possibilities : you may want your item to be able to spoil into any N number of other items, with weighted probabilities.
-You may want to make your item spoil into something... if it's day on the surface, and into something else if it's night !
-You may want to make your item spoil into something only if there is a destroyer worm nearby... and into nothing if there is none.
-
-All these things are possible.
-
 # Limitations (read this, please, like, really, this is important)
 
-If you add a spoilable ore, you will either need to set placeholder_spoil_into_self to true, or define a fallback for your ore item.
+If you add a spoilable ore, you will either need to set loop_spoil_safe_mode to true, or define a fallback for your ore item.
 
 Adding a "fallback_spoilage" allows the game to still spoil the item into another item even if RSL cannot access the target inventory (if the inventory is an internal buffer, like for mining drills for instance).
 If you do that, and in the case where RSL can't access the inventory, the script won't delete the placeholder, and the placeholder will turn into the fallback result you defined. I suggest you just use "spoilage" for this fallback, but you can use whatever you want, like "scrap", or "sand" or whatever.
 
+------
+How to use RSL :
 
----------
-How do use RSL in your mods :
+Simply add a RSL definition to your mod data.lua. You can copy paste the following documentation snippet in your code in order to get type hints.
+Please note that "original_item_name" must refer to an item that spoils. RSL won't transform your item into a spoilable item, you need to do this yourself.
 
-In your data.lua, you will need to 
 ```lua
-local rsl = require("__runtime-spoilage-library__/data_registry")
+---@alias RslItemName string
+---@alias RslConditionResult string
 
+---@class RslRandomResult
+---@field name RslItemName
+---@field weight? number Optional. If omitted, all results are equally weighted.
+
+---@alias RslRandomResults RslRandomResult[] Example: {{name="iron-plate"}, {name="copper-plate"}} or {{name="iron-plate", weight = 1}, {name="copper-plate", weight = 3}}
+---@alias RslConditionalRandomResults table<RslConditionResult, RslRandomResults> Example: { ["day"] = {{name="ice", weight=10}, {name = "stone", weight=1}} }
+---@alias RslConditionalResults table<RslConditionResult, {name: RslItemName}> Example: { ["night"] = "sunflower"
+
+---@class rsl_definition_data
+---@field original_item_name string The name of the item that will spoil.
+---@field original_item_spoil_ticks integer Number of ticks before spoilage occurs.
+---@field items_per_trigger? integer Optional. Number of items required to trigger spoilage.
+---@field fallback_spoilage? string Optional. Item name used if no spoilage result is determined.
+---@field loop_spoil_safe_mode boolean If true, the item spoils into itself if no result is available.
+---@field additional_trigger? table Optional. Additional trigger conditions.
+---@field random boolean If true, spoilage is chosen randomly.
+---@field conditional boolean If true, spoilage depends on a condition function.
+---@field condition_checker_func_name? string Name of the condition function used.
+---@field condition_checker_func? string the function to check the condition
+---@field random_results? RslRandomResults
+---@field conditional_random_results? RslConditionalRandomResults
+---@field conditional_results? RslConditionalResults
 ```
-You can then call the registry doing :
+And here is an exemple you can copy paste and modify directly :
+
+
 ```lua
---- Please not that you should put "nil" or just nothing for number of items_per_trigger unless you REALLY know what you are doing.
---- If you do this, RSL will automatically adjust this value so only one event is raised when a stack spoils, which
---- is VERY important for performance if you intend to apply RSL to mass produced items.
-rsl.register_spoilable_item(youritemtable, items_per_trigger, fallback_item_name (optional), custom script (optional) )
+---@type rsl_registration
+local registration_data = {
+        original_item_name = "name of the item that will spoil",
+        original_item_spoil_ticks = --int,
+        -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
+        -- By default, RSL will set this field afterwards so the even only triggers ONCE per item stack.
+        -- Setting an arbitrary number here WILL hinder performance.
+        items_per_trigger = --? int or nil,
+        fallback_spoilage = --? an item name or nil,
+        loop_spoil_safe_mode = --true or false, if true, the placeholder will spoil into itself if it cannot be replaced by RSL, if false, it will simply disappear. Defaults to true if not specified.,
+        additional_trigger = --? trigger,
+        random = --true | false,
+        conditional = --true | false,
+        --- Only one of the following 3 tables is needed
+        random_results = {},
+        conditional_random_results = {},
+        conditional_results = {}
+    }
+
+local rsl_definition = {
+    type = "mod-data",
+    name = "whatever, just make sure it's unique by using a prexif for instance",
+    --- Data type MUST be "rsl_definition"
+    data_type = "rsl_definition",
+    data = definition_data
+}
 ```
-In your control.lua, you will need to make a remote call to RSL and pass it your item name and a list of args :
+
+and here is a concrete lightweight exemple :
 
 ```lua
---- Defines the mode in which results are selected.
----@class ModeType
----@field random boolean
----@field conditional boolean
----@field weighted boolean
-
---- Represents a remote function call structure.
----@class RemoteCall
----@field remote_mod string The name of the mod exposing the function.
----@field remote_function string The name of the function to call.
-
---- Represents a possible result item with an optional weight.
----@class RslWeightedItem
----@field name string The name of the result item.
----@field weight? number The weight for weighted selection (optional).
-
---- Arguments for registering an RSL definition.
----@class RslArgs
----@field mode ModeType The mode settings for result selection.
----@field condition? RemoteCall The remote call used if the mode is conditional. If it's not conditional, it'll just use `true`.
----@field possible_results table<any, RslWeightedItem[]> The possible outcomes based on condition results.
-local args_model = {
-    mode = {random = false, conditional = false, weighted = false},
-    condition = nil,
-    possible_results = {
-        [true] = {
-            {name = "", weight = 1}
+local my_rsl_registration = {
+    type = "mod-data",
+    name = "bob_is_blue",
+    data_type = "rsl_registration",
+    data = {
+        loop_spoil_safe_mode = true,
+        original_item_name = "iron-plate",
+        conditional = false,
+        random = true,
+        random_results = {
+            {name = "iron-plate", weight = 1},
+            {name = "copper-plate", weight = 10},
         }
     }
 }
+
+data:extend{my_rsl_definition}
 ```
+and finally, here is a more advanced exemple : 
 
-To register a remote call to your mod as a condition, do       
-```lua
-condition = { -- Example condition
-              remote_mod = "your-mod-name",      -- Your mod name here
-              remote_function = "func_name",         -- The function name to call
-          },
-
-```
-
-------------------
-An exemple is better than a thousand words, so here is the bare minimum you need to do :
-
-In your data.lua :
-```lua
-local rsl = require("__runtime-spoilage-library__/data_registry")
-
-
-local mutation_a = {
-    type = "item",
-    name = "mutation-a",
-    icon = "__base__/graphics/icons/automation-science-pack.png",
-    subgroup = "raw-material",
-    stack_size = 10,
-    spoil_ticks = 200,
-}
----Params :
---1) item
---2) (optional) number of items needed to trigger a runtime spoilage replacement / script effect. Defaults to `1`
---3) (optional) placeholder fallback spoiling result (used in case the script cannot replace the item at runtime. If you don't set anything, the item will just be deleted like if it spoiled into nothing if this happens. For instance, unless you are an advanced user and know how you can handle furnaces and assembling machines, you better set something here like "spoilage")
---4) (optional) trigger -- you may add another triggered effect
-
-rsl.register_spoilable_item(mutation_a)
-
-```
-Exemple of additional trigger effect :
-```lua
-local effect =
-{
-      type = "direct",
-      action_delivery =
-          {
-          type = "instant",
-          source_effects = 
-          {
-              {
-                  type = "script",
-                  effect_id = "name-of-script"
-              },
-          }
-      }
-}
-```
-
-In your control.lua :
-Simple example : 
 ```lua
 
-local function call_remote()
-    remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
-    mode = { random = true, conditional = false, weighted = false },
-    condition = true,
-    possible_results = {
-        [true] = {{ name = "iron-plate"}, { name = "copper-plate"}},
-        [false] = {}
-        }
+---@type rsl_registration_data
+local registration_data = {
+        original_item_name = "name of the item that will spoil",
+        original_item_spoil_ticks = --int,
+        -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
+        -- By default, RSL will set this field afterwards so the even only triggers ONCE per item stack.
+        -- Setting an arbitrary number here WILL hinder performance.
+        items_per_trigger = --? int or nil,
+        fallback_spoilage = --? an item name or nil,
+        loop_spoil_safe_mode = --true or false, if true, the placeholder will spoil into itself if it cannot be replaced by RSL, if false, it will simply disappear. Defaults to true if not specified.,
+        additional_trigger = --? trigger,
+        random = --true | false,
+        conditional = --true | false,
+        condition_checker_func_name = "is_in_iron_chest",
+        condition_checker_func = [[
+        function(event)
+          local e = event.source_entity
+          return e and e.valid and e.name == "iron-chest"
+        end
+      ]],
+        conditional_random_results = {
+            ["true"] = {
+                {name = "iron-ore"}, {name="copper-cable"}
+            },
+            ["falsetrue"] = {
+                {name = "copper-ore"}, {name="stone"}
+            }
+        },
+
     }
-)
-end
 
-
-script.on_init(function()
-    call_remote()
-end)
-
-script.on_configuration_changed(function()
-    call_remote()
-end)
-```
-
-
-
-Advanced :
-```lua
--- If you want fallback behaviour, you'll have to implement it yourself
----@enum (key) surfaces
-local valid_surfaces = {
-	nauvis = true,
-	vulcanus = true,
-	fallback = true, -- Technically not intentionally valid, but if it hits anyways, why replace it with itself?
+    local my_rsl_registration = {
+    type = "mod-data",
+    name = "bob_is_blue",
+    data_type = "rsl_registration",
+    data = rsl_registration_data
 }
 
---- If you use a function like the one writte above, you will need to provide a remote interface to RSL
-remote.add_interface("your-mod-name", {
-	--- Custom condition to select the results based on the surface name
-	--- @param event EventData.on_script_trigger_effect
-	--- @return surfaces
-	get_surface = function (event)
-		local surface = event.source_entity.surface.name
-		if valid_surfaces[surface] then
-			return surface
-		else
-			return "fallback"
-		end
-	end
-})
-
-local function call_remote()
-	remote.call("rsl_registry", "register_rsl_definition", "mutation-a", { -- You call the "rsl_registry" to use "register_rsl_definition" and pass it the name of your custom item "mutation-a"
-		mode = { random = false, conditional = true, weighted = false },
-		condition = {
-			remote_mod = "your-mod-name",      -- Your mod name here
-			remote_function = "get_surface",         -- The function name to call
-		},  -- Example condition
-		possible_results = {
-			nauvis = {{ name = "iron-plate"}},
-			vulcanus = {{ name = "copper-plate"}},
-			fallback = {{ name = "steel-plate"}},
-		}--[[@as table<surfaces,RslItems>]] -- To help warn you if you add unecessary results.
-	})
-end
-
-
-
-script.on_init(function()
-	call_remote()
-end)
-
-script.on_configuration_changed(function()
-	call_remote()
-end)
-
-```
+data:extend{my_rsl_definition}
+    ```
