@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.0.0
+Date: 23. 08. 2025
+  Changes:
+    - Remove "register spoilable item" in favor of using the new "mod data" model.
+    - Integrate various API/Engine upgrades.
+    - Select result is now run first when a RSL item is detected, instead of running only when found in a container. This shouldn't affect negatively performance in a real world scenario.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 28. 03. 2025
   Changes:
