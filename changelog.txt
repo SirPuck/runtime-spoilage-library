@@ -2,6 +2,7 @@
 Version: 2.0.2
 Date: 2025-08-24
   Changes:
+    - Add compatibility with other things than "item" (like modules)
 ---------------------------------------------------------------------------------------------------
 Version: 2.0.1
 Date: 2025-08-24
