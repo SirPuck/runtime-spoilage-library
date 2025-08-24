@@ -31,6 +31,7 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 ---@alias RslConditionalResults table<RslConditionResult, {name: RslItemName}> Example: { ["night"] = "sunflower"
 
 ---@class RslRegistrationData
+---@field data_raw_table string item, module etc...
 ---@field original_item_name string The name of the item that will spoil.
 ---@field original_item_spoil_ticks integer Number of ticks before spoilage occurs.
 ---@field items_per_trigger? integer Optional. Number of items required to trigger spoilage.
@@ -51,6 +52,7 @@ And here is an exemple you can copy paste and modify directly :
 ```lua
 ---@type RslRegistrationData
 local registration_data = {
+        data_raw_table = "item",
         original_item_name = "name of the item that will spoil",
         original_item_spoil_ticks = --int,
         -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
@@ -104,6 +106,7 @@ and finally, here is a more advanced exemple :
 
 ---@type RslRegistrationData
 local registration_data = {
+        data_raw_table = "item",
         original_item_name = "name of the item that will spoil",
         original_item_spoil_ticks = --int,
         -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
