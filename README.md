@@ -30,7 +30,7 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 ---@alias RslConditionalRandomResults table<RslConditionResult, RslRandomResults> Example: { ["day"] = {{name="ice", weight=10}, {name = "stone", weight=1}} }
 ---@alias RslConditionalResults table<RslConditionResult, {name: RslItemName}> Example: { ["night"] = "sunflower"
 
----@class rsl_definition_data
+---@class RslDefinitionData
 ---@field original_item_name string The name of the item that will spoil.
 ---@field original_item_spoil_ticks integer Number of ticks before spoilage occurs.
 ---@field items_per_trigger? integer Optional. Number of items required to trigger spoilage.
@@ -49,8 +49,8 @@ And here is an exemple you can copy paste and modify directly :
 
 
 ```lua
----@type rsl_registration
-local registration_data = {
+---@type RslDefinitionData
+local my_rsl_definition_data = {
         original_item_name = "name of the item that will spoil",
         original_item_spoil_ticks = --int,
         -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
@@ -68,19 +68,21 @@ local registration_data = {
         conditional_results = {}
     }
 
-local rsl_definition = {
+---@type RslDefinition
+local my_rsl_definition = {
     type = "mod-data",
     name = "whatever, just make sure it's unique by using a prexif for instance",
-    --- Data type MUST be "rsl_definition"
-    data_type = "rsl_definition",
-    data = definition_data
+    --- Data type MUST be "rsl_registration"
+    data_type = "rsl_registration",
+    data = my_rsl_definition_data
 }
 ```
 
 and here is a concrete lightweight exemple :
 
 ```lua
-local my_rsl_registration = {
+---@type RslDefinition
+local my_rsl_definition = {
     type = "mod-data",
     name = "bob_is_blue",
     data_type = "rsl_registration",
@@ -101,9 +103,8 @@ data:extend{my_rsl_definition}
 and finally, here is a more advanced exemple : 
 
 ```lua
-
----@type rsl_registration_data
-local registration_data = {
+---@type RslDefinitionData
+local my_rsl_definition_data = {
         original_item_name = "name of the item that will spoil",
         original_item_spoil_ticks = --int,
         -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
@@ -130,15 +131,15 @@ local registration_data = {
                 {name = "copper-ore"}, {name="stone"}
             }
         },
-
     }
 
-    local my_rsl_registration = {
+---@type RslDefinition
+local my_rsl_definition = {
     type = "mod-data",
     name = "bob_is_blue",
     data_type = "rsl_registration",
-    data = rsl_registration_data
+    data = my_rsl_definition_data
 }
 
 data:extend{my_rsl_definition}
-    ```
+```
