@@ -1,8 +1,8 @@
 local selection_funcs = {}
 local condition_check_functions = require("runtime_registry").registry.condition_check_functions
 
-function selection_funcs.weighted_choice(possible_results)
-    local possible_results = possible_results
+function selection_funcs.weighted_choice(rsl_definition)
+    local possible_results = rsl_definition.possible_results
     if not possible_results then return nil end
 
     local r = math.random() * possible_results.cumulative_weight
