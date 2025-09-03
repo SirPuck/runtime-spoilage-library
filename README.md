@@ -28,10 +28,10 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 
 ---@alias RslRandomResults RslRandomResult[] Example: {{name="iron-plate"}, {name="copper-plate"}} or {{name="iron-plate", weight = 1}, {name="copper-plate", weight = 3}}
 ---@alias RslConditionalRandomResults table<RslConditionResult, RslRandomResults> Example: { ["day"] = {{name="ice", weight=10}, {name = "stone", weight=1}} }
----@alias RslConditionalResults table<RslConditionResult, {name: RslItemName}> Example: { ["night"] = "sunflower"
+---@alias RslConditionalResults table<RslConditionResult, {name: RslItemName}> Example: { ["night"] = "sunflower" }
 
 ---@class RslRegistrationData
----@field data_raw_table string item, module etc...
+---@field data_raw_table string item, module etc... The value of the `type` field in the original prototype definition.
 ---@field original_item_name string The name of the item that will spoil.
 ---@field original_item_spoil_ticks integer Number of ticks before spoilage occurs.
 ---@field items_per_trigger? integer Optional. Number of items required to trigger spoilage.
@@ -46,7 +46,7 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 ---@field conditional_random_results? RslConditionalRandomResults
 ---@field conditional_results? RslConditionalResults
 ```
-And here is an exemple you can copy paste and modify directly :
+And here is an example you can copy paste and modify directly :
 
 
 ```lua
@@ -73,8 +73,8 @@ local registration_data = {
 local rsl_registration = {
     type = "mod-data",
     name = "whatever, just make sure it's unique by using a prexif for instance",
-    --- Data type MUST be "rsl_definition"
-    data_type = "rsl_definition",
+    --- Data type MUST be "rsl_registration"
+    data_type = "rsl_registration",
     data = definition_data
 }
 ```
@@ -87,6 +87,7 @@ local my_rsl_registration = {
     name = "bob_is_blue",
     data_type = "rsl_registration",
     data = {
+        data_raw_table = "item",
         loop_spoil_safe_mode = true,
         original_item_name = "iron-plate",
         conditional = false,
@@ -118,7 +119,9 @@ local registration_data = {
         additional_trigger = --? trigger,
         random = --true | false,
         conditional = --true | false,
-        condition_checker_func_name = "is_in_iron_chest",
+        condition_checker_func_name = "is_in_iron_chest", -- this can be anything, just give your function a unique name
+        -- `condition_checker_func` must be a string, but that string should be a function that takes a single parameter of type EventData.on_script_trigger_effect and returns a value.
+        -- The return value will be converted to a string and used to look up a set of results in `conditional_random_results`.
         condition_checker_func = [[
         function(event)
           local e = event.source_entity
@@ -129,7 +132,7 @@ local registration_data = {
             ["true"] = {
                 {name = "iron-ore"}, {name="copper-cable"}
             },
-            ["falsetrue"] = {
+            ["false"] = {
                 {name = "copper-ore"}, {name="stone"}
             }
         },
@@ -144,4 +147,4 @@ local registration_data = {
 }
 
 data:extend{my_rsl_registration}
-    ```
+```
