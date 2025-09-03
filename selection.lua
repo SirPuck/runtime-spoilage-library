@@ -48,7 +48,7 @@ end
 function selection_funcs.condition_random_unweighted(rsl_definition, event)
     local check_result = check_condition(rsl_definition, event)
     local possible_results = rsl_definition.possible_results[check_result]
-    return selection_funcs.select_one_result_over_n_unweighted(possible_results)
+    return selection_funcs.select_one_result_over_n_unweighted({possible_results = possible_results}) -- function expects a table with `possible_results` element
 end
 
 ---@param rsl_definition RtRslDefinition
@@ -56,7 +56,7 @@ end
 function selection_funcs.condition_random_weighted(rsl_definition, event)
     local check_result = check_condition(rsl_definition, event)
     local possible_results = rsl_definition.possible_results[tostring(check_result)]
-    return selection_funcs.weighted_choice(possible_results)
+    return selection_funcs.weighted_choice({possible_results = possible_results}) -- function expects a table with `possible_results` element
 end
 
 ---@param rsl_definition RtRslDefinition
