@@ -109,7 +109,7 @@ local function validate_c_deterministic_results(prototype_name, input_results)
     end
 
     for key, value in pairs(input_results) do
-        if type(key) ~= "string" then
+        if type(key) ~= "string" and type(key) ~= "number" then
             error("validate_results: in prototype "..prototype_name..", key '" .. tostring(key) .. "' is not a string|int|bool.")
         end
         if type(value) ~= "string" then
