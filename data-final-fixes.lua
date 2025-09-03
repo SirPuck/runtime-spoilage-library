@@ -145,7 +145,7 @@ local function make_rsl_definition(rsl_registration)
 
     original_item.spoil_to_trigger_result =
     {
-        items_per_trigger = original_item.stack_size, --This allows to trigger only one event by default for the entire stack.
+        items_per_trigger = rsl_definition.data.items_per_trigger or original_item.stack_size, --This allows to trigger only one event by default for the entire stack.
         trigger =
         {
             {
