@@ -1,8 +1,15 @@
 local selection_funcs = {}
 local condition_check_functions = require("runtime_registry").registry.condition_check_functions
 
-function selection_funcs.weighted_choice(rsl_definition)
-    local possible_results = rsl_definition.possible_results
+---@class PossibleResults
+---@field [string] table
+
+---@class ResultMapping
+---@field possible_results PossibleResults
+
+---@param result_mapping ResultMapping
+function selection_funcs.weighted_choice(result_mapping)
+    local possible_results = result_mapping.possible_results
     if not possible_results then return nil end
 
     local r = math.random() * possible_results.cumulative_weight
@@ -24,10 +31,10 @@ end
 -- Random selection functions
 -----------------------------
 --- This function selects and returns one outcome with equals chances of selection from an array of possible items
----@param rsl_definition RtRslDefinition
-function selection_funcs.select_one_result_over_n_unweighted(rsl_definition, _)
-    if #rsl_definition.possible_results == 0 then return nil end
-    return rsl_definition.possible_results[math.random(1, #rsl_definition.possible_results)].name
+---@param result_mapping ResultMapping
+function selection_funcs.select_one_result_over_n_unweighted(result_mapping, _)
+    if #result_mapping.possible_results == 0 then return nil end
+    return result_mapping.possible_results[math.random(1, #result_mapping.possible_results)].name
 end
 
 ---@param rsl_definition RtRslDefinition
@@ -47,16 +54,16 @@ end
 ---@param event EventData.on_script_trigger_effect
 function selection_funcs.condition_random_unweighted(rsl_definition, event)
     local check_result = check_condition(rsl_definition, event)
-    local possible_results = rsl_definition.possible_results[check_result]
-    return selection_funcs.select_one_result_over_n_unweighted({possible_results = possible_results}) -- function expects a table with `possible_results` element
+    local result_mapping = {possible_results = rsl_definition.possible_results[check_result]}
+    return selection_funcs.select_one_result_over_n_unweighted(result_mapping) -- function expects a table with `possible_results` element
 end
 
 ---@param rsl_definition RtRslDefinition
 ---@param event EventData.on_script_trigger_effect
 function selection_funcs.condition_random_weighted(rsl_definition, event)
     local check_result = check_condition(rsl_definition, event)
-    local possible_results = rsl_definition.possible_results[tostring(check_result)]
-    return selection_funcs.weighted_choice({possible_results = possible_results}) -- function expects a table with `possible_results` element
+    local result_mapping = {possible_results = rsl_definition.possible_results[tostring(check_result)]}
+    return selection_funcs.weighted_choice(result_mapping) -- function expects a table with `possible_results` element
 end
 
 ---@param rsl_definition RtRslDefinition
