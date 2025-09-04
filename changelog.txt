@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.0.4
+Date: 2025-09-04
+  Changes:
+    - Fix a bug in conditional results choice, thanks to Majoca22. This bug was introduced in the last bugfix in weighted choice...
+    - Add usage for several parameters at data stage (fallback spoilage, additional trigger).
+    - Remove unused original_item_spoil_ticks
+    - Improve documentation
+    - Change the name of "data_raw_table" to "original_item_type" for better clarity 
+---------------------------------------------------------------------------------------------------
 Version: 2.0.3
 Date: 2025-08-24
   Changes:

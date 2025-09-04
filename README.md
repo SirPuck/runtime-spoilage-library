@@ -145,3 +145,7 @@ local registration_data = {
 
 data:extend{my_rsl_registration}
 ```
+
+Thanks to : 
+- PennyJim for introducing data validation in this mod.
+- Majoca22 for finding a handful of bugs and offering a solution.
