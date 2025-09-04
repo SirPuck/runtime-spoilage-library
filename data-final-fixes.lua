@@ -109,7 +109,7 @@ local function validate_c_deterministic_results(prototype_name, input_results)
     end
 
     for key, value in pairs(input_results) do
-        if type(key) ~= "string" then
+        if type(key) ~= "string" and type(key) ~= "number" then
             error("validate_results: in prototype "..prototype_name..", key '" .. tostring(key) .. "' is not a string|int|bool.")
         end
         if type(value) ~= "string" then
@@ -145,7 +145,7 @@ local function make_rsl_definition(rsl_registration)
 
     original_item.spoil_to_trigger_result =
     {
-        items_per_trigger = original_item.stack_size, --This allows to trigger only one event by default for the entire stack.
+        items_per_trigger = rsl_definition.data.items_per_trigger or original_item.stack_size, --This allows to trigger only one event by default for the entire stack.
         trigger =
         {
             {
