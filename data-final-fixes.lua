@@ -168,11 +168,17 @@ local function make_rsl_definition(rsl_registration)
         }
     }
 
+    if rsl_registration.data.additional_trigger then
+        table.insert(original_item.spoil_to_trigger_result.trigger, rsl_registration.data.additional_trigger)
+    end
+
     original_item.spoil_result = placeholder.name
 
     if rsl_registration.data.loop_spoil_safe_mode or rsl_registration.data.loop_spoil_safe_mode == nil then
         placeholder.spoil_result = placeholder.name
         placeholder.spoil_to_trigger_result = original_item.spoil_to_trigger_result
+    elseif rsl_registration.data.fallback_spoilage then
+        placeholder.spoil_result = rsl_registration.data.fallback_spoilage
     end
 
     data:extend{

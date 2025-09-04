@@ -33,9 +33,8 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 ---@class RslRegistrationData
 ---@field original_item_type string item, module etc... The value of the `type` field in the original prototype definition.
 ---@field original_item_name string The name of the item that will spoil.
----@field original_item_spoil_ticks integer Number of ticks before spoilage occurs.
 ---@field items_per_trigger? integer Optional. Number of items required to trigger spoilage.
----@field fallback_spoilage? string Optional. Item name used if no spoilage result is determined.
+---@field fallback_spoilage? string Optional. Item name used if no spoilage result is determined only works if loop_spoil_safe_mode is explicitly set to false.
 ---@field loop_spoil_safe_mode boolean If true, the item spoils into itself if no result is available.
 ---@field additional_trigger? table Optional. Additional trigger conditions.
 ---@field random boolean If true, spoilage is chosen randomly.
@@ -54,7 +53,6 @@ And here is an example you can copy paste and modify directly :
 local registration_data = {
         original_item_type = "item",
         original_item_name = "name of the item that will spoil",
-        original_item_spoil_ticks = --int,
         -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
         -- By default, RSL will set this field afterwards so the even only triggers ONCE per item stack.
         -- Setting an arbitrary number here WILL hinder performance.
@@ -109,7 +107,6 @@ and finally, here is a more advanced exemple :
 local registration_data = {
         original_item_type = "item",
         original_item_name = "name of the item that will spoil",
-        original_item_spoil_ticks = --int,
         -- DO NOT set items_per_trigger unless you REALLY know what you are doing.
         -- By default, RSL will set this field afterwards so the even only triggers ONCE per item stack.
         -- Setting an arbitrary number here WILL hinder performance.
