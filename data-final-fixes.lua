@@ -127,7 +127,10 @@ local function make_rsl_definition(rsl_registration)
 
     local rsl_definition = table.deepcopy(rsl_registration)
 
-    local original_item = data.raw[rsl_definition.data.data_raw_table][rsl_definition.data.original_item_name]
+    local data_def = rsl_definition.data
+    local type_key = data_def.original_item_type or data_def.data_raw_table
+    local original_item = data.raw[type_key][data_def.original_item_name]
+
 
     local placeholder = {
             type = "item",
