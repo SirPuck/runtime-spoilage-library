@@ -23,7 +23,7 @@ local function preprocess_weights(possible_results)
     -- Build sorted list of cumulative_weights
     for _, option in ipairs(possible_results) do
         cumulative_weight = cumulative_weight + option.weight
-        table.insert(sorted_options, {name = option.name, weight = cumulative_weight})
+        table.insert(sorted_options, {name = option.name, quality=option.quality, weight = cumulative_weight})
     end
 
     -- Ensure sorting is correct (ascending order)
@@ -131,7 +131,6 @@ local function make_rsl_definition(rsl_registration)
     local type_key = data_def.original_item_type or data_def.data_raw_table
     local original_item = data.raw[type_key][data_def.original_item_name]
 
-
     local placeholder = {
             type = "item",
             name = original_item.name .. "-rsl-placeholder",
@@ -233,6 +232,11 @@ local function make_rsl_definition(rsl_registration)
         data:extend{rsl_definition}
     end
 
+    if rsl_definition.data.quality_upscale then
+        rsl_definition.data["selector"] = "quality_upscale"
+        rsl_definition.data["possible_results"] = rsl_registration.data.deterministic_result
+        data:extend{rsl_definition}
+    end
 
 end
 

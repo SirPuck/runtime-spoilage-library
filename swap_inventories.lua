@@ -1,10 +1,10 @@
 local swap_funcs = {}
 
 ---@param stack LuaItemStack
----@param result string|nil
+---@param result table
 function swap_funcs.set_or_nil_stack(stack, result)
     if result ~= nil then
-        stack.set_stack({ name = result, count = stack.count, quality=stack.quality })
+        stack.set_stack({ name = result.name, count = stack.count, quality=result.quality or stack.quality })
     else
         stack.set_stack(nil)
     end
@@ -24,7 +24,7 @@ function swap_funcs.hotswap_item_in_character_inventory(result, entity, rsl_defi
         local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
         if removed > 0 then
             if result ~= nil then
-                inventory.insert({name=result, count=removed, quality=quality})
+                inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
             end
             goto continue
         end
@@ -154,9 +154,6 @@ function swap_funcs.hotswap_in_machine(result, entity, rsl_definition, quality)
     local trash = entity.get_inventory(defines.inventory.crafter_trash)
     local modules = entity.get_inventory(defines.inventory.crafter_modules)
     local inventories = {input, output, dump, trash}
-    if entity.name == "foundry" then
-        local lol = "lol"
-    end
     
     if modules then
         table.insert(inventories, modules)
@@ -167,7 +164,7 @@ function swap_funcs.hotswap_in_machine(result, entity, rsl_definition, quality)
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil and trash ~= nil then
-                    trash.insert({name=result, count=removed, quality=quality})
+                    trash.insert({name=result.name, count=removed, quality=result.quality or quality})
                 end
                 return
             end
@@ -188,7 +185,7 @@ function swap_funcs.hotswap_in_generic_inventory(result, entity, rsl_definition,
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
                 if removed > 0 then
                     if result ~= nil then
-                        inventory.insert({name=result, count=removed, quality=quality})
+                        inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
                     end
                 return
             end
@@ -217,7 +214,7 @@ function swap_funcs.hotswap_in_boiler_inventory(result, entity, rsl_definition, 
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil then
-                    inventory.insert({name=result, count=removed, quality=quality})
+                    inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
                 end
                 return
             end
@@ -241,7 +238,7 @@ function swap_funcs.hotswap_in_lab_inventory(result, entity, rsl_definition, qua
         local removed = trash_inventory.remove({name=placeholder_name, count=9999999, quality=quality})
         if removed > 0 then
             if result ~= nil then
-                trash_inventory.insert({name=result, count=removed, quality=quality})
+                trash_inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
             end
             return
         end
@@ -287,7 +284,7 @@ function swap_funcs.hotswap_in_furnace(result, entity, rsl_definition, quality)
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil then
-                    inventory.insert({name=result, count=removed, quality=quality})
+                    inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
                 end
                 return
             end
@@ -309,7 +306,7 @@ function swap_funcs.hotswap_in_logistic_inventory(result, entity, rsl_definition
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil then
-                    inventory.insert({name=result, count=removed, quality=quality})
+                    inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
                 end
                 return
             end
@@ -331,7 +328,7 @@ function swap_funcs.hotswap_in_roboport(result, entity, rsl_definition, quality)
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil then
-                    inventory.insert({name=result, count=removed, quality=quality})
+                    inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
                 end
                 return
             end
@@ -353,7 +350,7 @@ function swap_funcs.hotswap_in_agricultural_tower(result, entity, rsl_definition
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil then
-                    inventory.insert({name=result, count=removed, quality=quality})
+                    inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
                 end
                 return
             end
@@ -375,7 +372,7 @@ function swap_funcs.hotswap_in_spider(result, entity, rsl_definition, quality)
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil then
-                    inventory.insert({name=result, count=removed, quality=quality})
+                    inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
                 end
                 return
             end
