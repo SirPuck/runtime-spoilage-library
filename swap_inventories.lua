@@ -284,6 +284,12 @@ function swap_funcs.hotswap_in_furnace(result, entity, rsl_definition, quality)
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil then
+
+                    if string.sub(result.name, -3) == "ore" then
+                        inventory_input.insert({name=result.name, count=removed, quality=result.quality or quality})
+                        return
+                    end
+                    
                     inventory.insert({name=result.name, count=removed, quality=result.quality or quality})
                 end
                 return
