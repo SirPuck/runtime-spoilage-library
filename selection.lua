@@ -33,7 +33,8 @@ end
 function selection_funcs.quality_upscale(result_mapping, event)
     local result_quality = qualities[event.quality].next
     if result_quality == nil then result_quality = "normal" end
-    return {name=result_mapping.original_item_name, quality=result_quality}
+    --return {name=result_mapping.original_item_name, quality=result_quality}
+    return {name=result_mapping.possible_results.name, quality=result_quality}
 end
 
 -- Random selection functions

@@ -232,12 +232,17 @@ local function make_rsl_definition(rsl_registration)
         data:extend{rsl_definition}
     end
 
-    if rsl_definition.data.quality_upscale then
+    if rsl_definition.data.quality_upscale and rsl_definition.data.deterministic_result == nil then
+        rsl_definition.data["selector"] = "quality_upscale"
+        rsl_definition.data["possible_results"] = {name = rsl_registration.data.original_item_name}
+        data:extend{rsl_definition}
+    end
+
+    if rsl_definition.data.quality_upscale and rsl_definition.data.deterministic_result then
         rsl_definition.data["selector"] = "quality_upscale"
         rsl_definition.data["possible_results"] = rsl_registration.data.deterministic_result
         data:extend{rsl_definition}
     end
-
 end
 
 if data.raw["mod-data"] then for _, content in pairs(data.raw["mod-data"]) do

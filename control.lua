@@ -75,10 +75,10 @@ local function swap_item(event, rsl_definition)
     end
 end
 
-
+registry.make_registry()
 
 local function on_spoil(event)
-    local definition = storage.rsl_definitions[event.effect_id]
+    local definition = registry.rsl_definitions[event.effect_id]
     if definition then swap_item(event, definition) end
 end
 
@@ -86,9 +86,9 @@ end
 script.on_event(defines.events.on_script_trigger_effect, on_spoil)
 
 local function setup_storage()
-    rsl_definitions = {}
-    storage.rsl_definitions = rsl_definitions
-    registry.make_registry()
+    --rsl_definitions = {}
+    --storage.rsl_definitions = rsl_definitions
+    --registry.make_registry()
     registry.compile_functions()
 end
 
