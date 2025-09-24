@@ -151,7 +151,7 @@ local registration_data = {
 data:extend{my_rsl_registration}
 ```
 
-# Quality upscale exemples
+# Quality cycling/upscale and deterministic exemples
 
 
 To simply cycle up quality in a loop normal -> max quality -> normal and so on
@@ -169,7 +169,7 @@ data:extend{
         original_item_name = "copper-ore",
         conditional = false,
         random = false,
-        quality_upscale = true
+        quality_cycling = true
     }
     }
 }
