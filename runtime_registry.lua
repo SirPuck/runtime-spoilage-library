@@ -7,6 +7,7 @@
 ---@field condition_checker_func string
 
 local registry = {}
+registry.rsl_definitions = {}
 registry.condition_check_functions = {}
 
 local function compile_function_from_string(name, code_str)
@@ -73,19 +74,22 @@ function registry.make_registry()
                 end
             elseif proto.data.selector == "deterministic" then
                 rsl_definition.possible_results = proto.data.possible_results
+            elseif proto.data.selector == "quality_upscale" then
+                rsl_definition.possible_results = proto.data.possible_results
             end
-            storage.rsl_definitions[proto.name] = rsl_definition
+            registry.rsl_definitions[proto.name] = rsl_definition
         end
     end
 end
 
 function registry.compile_functions()
-    for _, definition in pairs(storage.rsl_definitions) do
+    for _, definition in pairs(registry.rsl_definitions) do
         if definition.condition_checker_func then
             compile_function_from_string(definition.condition_checker_func_name, definition.condition_checker_func)
         end
     end
 end
+
 
 return {
     registry = registry,

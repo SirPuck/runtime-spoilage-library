@@ -1,6 +1,8 @@
 local selection_funcs = {}
 local condition_check_functions = require("runtime_registry").registry.condition_check_functions
 
+local qualities = prototypes.quality
+
 ---@class PossibleResults
 ---@field [string] table
 
@@ -25,7 +27,14 @@ function selection_funcs.weighted_choice(result_mapping)
         end
     end
 
-    return possible_results[low].name  -- Correctly selected option
+    return possible_results[low]  -- Correctly selected option
+end
+
+function selection_funcs.quality_upscale(result_mapping, event)
+    local result_quality = qualities[event.quality].next
+    if result_quality == nil then result_quality = "normal" end
+    --return {name=result_mapping.original_item_name, quality=result_quality}
+    return {name=result_mapping.possible_results.name, quality=result_quality}
 end
 
 -- Random selection functions
@@ -34,7 +43,7 @@ end
 ---@param result_mapping ResultMapping
 function selection_funcs.select_one_result_over_n_unweighted(result_mapping, _)
     if #result_mapping.possible_results == 0 then return nil end
-    return result_mapping.possible_results[math.random(1, #result_mapping.possible_results)].name
+    return result_mapping.possible_results[math.random(1, #result_mapping.possible_results)]
 end
 
 ---@param rsl_definition RtRslDefinition

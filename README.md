@@ -5,6 +5,11 @@ RSL, for Runtime Spoilage Library, is a set of tools meant to be as straightforw
 For now, RSL allows you to define a spoilable item, and how and by what it should be replaced.
 The goal of RSL is, at first, to allow you to specify multiple possible outcomes for a spoilable item.
 
+# Quality Upscale
+
+RSL now handles quality upscale, and deterministic quality spoiling !
+See exemple below.
+
 # Limitations (read this, please, like, really, this is important)
 
 If you add a spoilable ore, you will either need to set loop_spoil_safe_mode to true, or define a fallback for your ore item.
@@ -145,6 +150,54 @@ local registration_data = {
 
 data:extend{my_rsl_registration}
 ```
+
+# Quality upscale exemples
+
+
+To simply cycle up quality in a loop normal -> max quality -> normal and so on
+
+```lua
+data.raw.item["copper-ore"].spoil_ticks = 100
+data:extend{
+    {
+    type = "mod-data",
+    name = "john",
+    data_type = "rsl_registration",
+    data = {
+        data_raw_table = "item",
+        loop_spoil_safe_mode = true,
+        original_item_name = "copper-ore",
+        conditional = false,
+        random = false,
+        quality_upscale = true
+    }
+    }
+}
+```
+
+To chose an arbitrary quality :
+
+```lua
+data.raw.item["copper-ore"].spoil_ticks = 100
+data:extend{
+    {
+    type = "mod-data",
+    name = "john",
+    data_type = "rsl_registration",
+    data = {
+        data_raw_table = "item",
+        loop_spoil_safe_mode = true,
+        original_item_name = "copper-ore",
+        conditional = false,
+        random = false,
+        quality_change = true,
+        deterministic_result = {name = "copper-ore", quality = "rare"}
+    }
+    }
+}
+```
+
+
 
 Thanks to : 
 - PennyJim for introducing data validation in this mod.
