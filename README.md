@@ -17,6 +17,21 @@ If you add a spoilable ore, you will either need to set loop_spoil_safe_mode to 
 Adding a "fallback_spoilage" allows the game to still spoil the item into another item even if RSL cannot access the target inventory (if the inventory is an internal buffer, like for mining drills for instance).
 If you do that, and in the case where RSL can't access the inventory, the script won't delete the placeholder, and the placeholder will turn into the fallback result you defined. I suggest you just use "spoilage" for this fallback, but you can use whatever you want, like "scrap", or "sand" or whatever.
 
+# loop_spoil_safe_mode
+
+In the rsl_registration_data, you can use loop_spoil_safe_mode, this is nigh mandatory, unless you know what you are doing.
+Setting this option to true will make the placeholder item spoil into itself and try to trigger RSL replacement every time
+it spoils again.
+
+This is very useful because, by default, when a crafting machine is crafting an item, it remembers the tick when the crafting began. When the craft is finished, if the resulting item can spoil, the engine will check if it should be spoiled or not, by comparing the current tick whith the tick when the crafting began. The resulting item could therefore "spoil instantly".
+This is an issue for RSL, because when an item spoils inside a crafting buffer, the RSL script cannot trigger. And when the item "spoils instantly", it doesn't trigger RSL scripts either.
+
+There are two ways around this : making the placeholder spoil into itself : this way, even if the original item spoils during crafting, we are sure that a placeholder will be present in the output. This way, the original item spoils inside the buffer, but spawns a placeholder, and event if the placeholder spoils, it spoils into itself in a loop, meaning it will exist until it can trigger the script.
+
+The other way around this, that is not currently handled by RSL (but could) is to set every recipe producing the original item to use the option "result_is_always_fresh". Currently, RSL doesn't allow you to bruteforce this option to every recipe producing the original item. It could do it, in fact, it's a pretty simple code to implement, but I could cause side effects. Therefore, it's your responsability to update the recipes that need updating IF you consider it necessary. You probably don't want to bruteforce update every recipe that produce your original item because the player using your mod may use other mods that may or may not require these recipes, or some of them, to be untouched. If you update all recipes producing the original item without thinking much about it, you may also break other things (for instance, maybe some of these recipes also produce "normal" spoilable items that are supposed to be able to spoil inside the buffer, and changing this behavior could break balance and game functionalities.).
+
+
+
 ------
 How to use RSL :
 
