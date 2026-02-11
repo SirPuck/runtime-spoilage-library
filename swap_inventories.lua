@@ -160,7 +160,7 @@ function swap_funcs.hotswap_in_machine(result, entity, rsl_definition, quality)
     end
     for _, inventory in pairs(inventories) do
         local item_count = inventory.get_item_count({name=placeholder_name, quality=quality})
-        if item_count > 0 then
+        if item_count > 0 and trash.can_insert({name=result.name, count=removed, quality=result.quality or quality}) then
             local removed = inventory.remove({name=placeholder_name, count=9999999, quality=quality})
             if removed > 0 then
                 if result ~= nil and trash ~= nil then
@@ -233,7 +233,7 @@ function swap_funcs.hotswap_in_lab_inventory(result, entity, rsl_definition, qua
     --local inventory = entity.get_inventory(defines.inventory.lab_input)
     local trash_inventory = entity.get_inventory(defines.inventory.crafter_trash)
     -- Currently, trash_inventory_size does nothing for labs so there is only one slot available. Excess spoiled items will be deleted. 
-    if trash_inventory then
+    if trash_inventory and trash_inventory.can_insert({name=result.name, count=removed, quality=result.quality or quality}) then
 
         local removed = trash_inventory.remove({name=placeholder_name, count=9999999, quality=quality})
         if removed > 0 then
