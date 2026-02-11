@@ -85,7 +85,8 @@ local registration_data = {
         --- Only one of the following 3 tables is needed
         random_results = {},
         conditional_random_results = {},
-        conditional_results = {}
+        conditional_results = {},
+        placeholder_icon = ---? string, if not defined, will use the question mark signal icon
     }
 
 local rsl_registration = {

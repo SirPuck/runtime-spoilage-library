@@ -130,11 +130,12 @@ local function make_rsl_definition(rsl_registration)
     local data_def = rsl_definition.data
     local type_key = data_def.original_item_type or data_def.data_raw_table
     local original_item = data.raw[type_key][data_def.original_item_name]
+    local placeholder_icon = data_def.placeholder_icon or "__base__/graphics/icons/signal/signal-question-mark.png"
 
     local placeholder = {
             type = "item",
             name = original_item.name .. "-rsl-placeholder",
-            icon = "__base__/graphics/icons/signal/signal-question-mark.png",
+            icon = placeholder_icon,
             subgroup = "raw-material",
             stack_size = original_item.stack_size,
             spoil_ticks = 10,
