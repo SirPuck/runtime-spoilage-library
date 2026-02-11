@@ -112,8 +112,8 @@ local function validate_c_deterministic_results(prototype_name, input_results)
         if type(key) ~= "string" then
             error("validate_results: in prototype "..prototype_name..", key '" .. tostring(key) .. "' is not a string.")
         end
-        if type(value) ~= "string" then
-             error("validate_results: in prototype "..prototype_name..", value for key '" .. key .. "' must be a string (item name), got " .. type(value))
+        if type(value) ~= "table" then
+             error("validate_results: in prototype "..prototype_name..", value for key '" .. key .. "' must be a table (item name), got " .. type(value))
         end
     end
 
