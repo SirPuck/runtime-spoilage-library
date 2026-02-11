@@ -86,7 +86,13 @@ local registration_data = {
         random_results = {},
         conditional_random_results = {},
         conditional_results = {},
-        placeholder_icon = ---? string, if not defined, will use the question mark signal icon
+        --- Optionally change the placeholder aspect
+        placeholder_overrides = { ---? 
+            icon = ---? string,
+            icons = ---? array[IconData],
+            localised_name = ---? LocalisedString,
+            localised_description = ---? LocalisedString,
+        }
     }
 
 local rsl_registration = {
