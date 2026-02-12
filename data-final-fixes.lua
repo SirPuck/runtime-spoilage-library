@@ -130,19 +130,27 @@ local function make_rsl_definition(rsl_registration)
     local data_def = rsl_definition.data
     local type_key = data_def.original_item_type or data_def.data_raw_table
     local original_item = data.raw[type_key][data_def.original_item_name]
-
+    local placeholder_icon = "__base__/graphics/icons/signal/signal-question-mark.png"
+    ---@type data.ItemPrototype
     local placeholder = {
             type = "item",
             name = original_item.name .. "-rsl-placeholder",
-            icon = "__base__/graphics/icons/signal/signal-question-mark.png",
+            icon = placeholder_icon,
             subgroup = "raw-material",
             stack_size = original_item.stack_size,
             spoil_ticks = 10,
             weight = original_item.weight,
-
             hidden = true,
             hidden_in_factoriopedia = true,
         }
+
+    if data_def.placeholder_overrides then
+        local overrides = data_def.placeholder_overrides
+        placeholder.icon = overrides.icon
+        placeholder.icons = overrides.icons
+        placeholder.localised_name = overrides.localised_name
+        placeholder.localised_description = overrides.localised_description
+    end
 
 
     original_item.spoil_to_trigger_result =

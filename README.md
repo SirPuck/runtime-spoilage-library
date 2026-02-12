@@ -42,13 +42,25 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 ---@alias RslItemName string
 ---@alias RslConditionResult string
 
+---@class RslResult
+---@field name RslItemName
+---@field quality? string, quality name
+
 ---@class RslRandomResult
 ---@field name RslItemName
 ---@field weight? number Optional. If omitted, all results are equally weighted.
 
 ---@alias RslRandomResults RslRandomResult[] Example: {{name="iron-plate"}, {name="copper-plate"}} or {{name="iron-plate", weight = 1}, {name="copper-plate", weight = 3}}
 ---@alias RslConditionalRandomResults table<RslConditionResult, RslRandomResults> Example: { ["day"] = {{name="ice", weight=10}, {name = "stone", weight=1}} }
----@alias RslConditionalResults table<RslConditionResult, {name: RslItemName}> Example: { ["night"] = {{name="sunflower"}}
+---@alias RslConditionalResults table<RslConditionResult, RslResult> Example: { ["night"] = {{name="sunflower"}}
+
+---@alias LocalisedString string|table
+
+---@class PlaceholderOverrides
+---@field icon? string
+---@field icons? table[]
+---@field localised_name? LocalisedString
+---@field localised_description? LocalisedString
 
 ---@class RslRegistrationData
 ---@field original_item_type string item, module etc... The value of the `type` field in the original prototype definition.
@@ -64,6 +76,7 @@ Please note that "original_item_name" must refer to an item that spoils. RSL won
 ---@field random_results? RslRandomResults
 ---@field conditional_random_results? RslConditionalRandomResults
 ---@field conditional_results? RslConditionalResults
+---@field placeholder_overrides? PlaceholderOverrides
 ```
 And here is an example you can copy paste and modify directly :
 
@@ -85,7 +98,14 @@ local registration_data = {
         --- Only one of the following 3 tables is needed
         random_results = {},
         conditional_random_results = {},
-        conditional_results = {}
+        conditional_results = {},
+        --- Optionally change the placeholder aspect
+        placeholder_overrides = { ---? PlaceholderOverrides
+            icon = ---? string,
+            icons = ---? array[IconData],
+            localised_name = ---? LocalisedString,
+            localised_description = ---? LocalisedString,
+        }
     }
 
 local rsl_registration = {
