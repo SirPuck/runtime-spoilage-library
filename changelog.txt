@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 2.2.0
+Date: 2026-02-11
+  Changes:
+    - Add an override placeholder option.
+    - Better handling of trash inventory slots for crafting machines.
+---------------------------------------------------------------------------------------------------
 Version: 2.1.2
 Date: 2026-02-11
   Bugfixes:
