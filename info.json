@@ -1,11 +1,11 @@
 {
 	"name": "runtime-spoilage-library",
-	"version": "2.2.1",
+	"version": "2.2.2",
 	"title": "Runtime spoilage library",
 	"author": "SirPuck",
 	"homepage": "https://discord.gg/DBW37M34NX",
 	"contact": "Discord : puke0417",
-	"dependencies": [],
+	"dependencies": ["base  >= 2.0.73"],
 	"spoiling_required": true,
 	"description": "A library to ease the implementation of random spoilage results in your mods.",
 	"factorio_version": "2.0"
