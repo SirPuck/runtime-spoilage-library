@@ -30,6 +30,8 @@ local generic_source_handler = {
     ["roboport"] = swap_funcs.hotswap_in_roboport,
     ["agricultural-tower"] = swap_funcs.hotswap_in_agricultural_tower,
     ["spider-vehicle"] = swap_funcs.hotswap_in_spider,
+    ["loader-1x1"] = swap_funcs.hotswap_in_belt,
+    ["loader-1x2"] = swap_funcs.hotswap_in_belt,
 }
 
 ---@type table<string,defines.inventory>
