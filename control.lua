@@ -43,9 +43,10 @@ local defined_inventories = {
     ["rocket-silo"] = defines.inventory.rocket_silo_rocket,
     ["locomotive"] = defines.inventory.fuel,
     ["beacon"] = defines.inventory.beacon_modules,
-    ["asteroid-collector"] = defines.inventory.asteroid_collector_output, -- Currently does not exist? Just using chest for the warning
+    ["asteroid-collector"] = defines.inventory.asteroid_collector_output,
     ["reactor"] = defines.inventory.fuel,
     ["fusion-reactor"] = defines.inventory.fuel,
+    ["infinity-container"] = defines.inventory.chest
 }
 
 ---@param event EventData.on_script_trigger_effect
